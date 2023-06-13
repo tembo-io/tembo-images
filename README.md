@@ -1,2 +1,2 @@
-# coredb-images
+# tembo-images
 Docker images for Postgres
