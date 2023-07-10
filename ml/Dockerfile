@@ -1,4 +1,4 @@
-FROM tembo/tembo-pg-cnpg:f857ab0
+FROM quay.io/tembo/tembo-pg-cnpg:f857ab0
 
 # Dependencies
 RUN apt-get update && \
