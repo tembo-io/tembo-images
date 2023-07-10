@@ -28,7 +28,7 @@ jobs:
         with:
           repository: tembo-io/tembo
           path: ./.tembo
-          ref: a0034703ad57d5179c0217beb39b88ca23417f43
+          ref: 737713f5839bcd3f533644fe316540d890c611a8
       - name: list dir
         run: ls -la .tembo/.github/actions
       - name: Find directories with Dockerfiles that changed
@@ -69,7 +69,7 @@ jobs:
         with:
             repository: tembo-io/tembo
             path: ./tembo
-            ref: a0034703ad57d5179c0217beb39b88ca23417f43
+            ref: 737713f5839bcd3f533644fe316540d890c611a8
       - name: Build and upload image
         uses: ./tembo/.github/actions/build-and-push-to-quay
         with:
