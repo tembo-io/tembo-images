@@ -1,4 +1,4 @@
-FROM quay.io/coredb/coredb-pg-slim:15.3.0-coredb-pg-slim.1-6a892b7
+FROM quay.io/tembo/tembo-pg-cnpg:f857ab0
 USER root
 
 RUN apt-get update && \
