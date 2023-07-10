@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - 'main'
+      - 'TEM-1290'
 
 jobs:
   find_directories:
