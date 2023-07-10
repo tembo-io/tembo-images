@@ -75,6 +75,7 @@ jobs:
         with:
             image_name: ${{ matrix.name }}
             docker_directory: ${{ matrix.path }}
+            registry: "quay.io/tembo"
             publish_latest: true
             publish_calver: true
             quay_user_tembo: ${{ secrets.QUAY_USER_TEMBO }}
