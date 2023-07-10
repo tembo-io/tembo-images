@@ -29,6 +29,8 @@ jobs:
           repository: tembo-io/tembo
           path: ./tembo
           ref: a0034703ad57d5179c0217beb39b88ca23417f43
+      - name: list dir
+        run: ls -la
       - name: Find directories with Dockerfiles that changed
         id: find_directories  
         uses: ./.tembo/.github/actions/find-changed-directories
