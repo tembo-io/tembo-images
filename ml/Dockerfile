@@ -1,5 +1,7 @@
 FROM quay.io/tembo/tembo-pg-cnpg:f857ab0
 
+USER root
+
 # Dependencies
 RUN apt-get update && \
     apt-get install -y \
@@ -56,3 +58,5 @@ RUN pip3 install -r \
     xgboost==1.7.5 \
     langchain==0.0.202 \
     einops==0.6.1
+
+USER postgres
