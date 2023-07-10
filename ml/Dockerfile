@@ -32,7 +32,7 @@ RUN apt-get update && apt-get install -y postgresql-pgml-15=2.7.0
 # pg vector
 RUN trunk install pgvector
 
-RUN pip3 install -r \
+RUN pip3 install \
     accelerate==0.20.3 \
     auto-gptq==0.2.2 \
     ctransformers==0.2.8 \
