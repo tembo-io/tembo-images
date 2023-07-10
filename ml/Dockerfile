@@ -1,8 +1,7 @@
-FROM quay.io/tembo/tembo-pg-cnpg:f857ab0
-
+# FROM quay.io/tembo/tembo-pg-cnpg:f857ab0
+FROM quay.io/coredb/coredb-pg-slim:15.3.0-coredb-pg-slim.1-6a892b7
 USER root
 
-# Dependencies
 RUN apt-get update && \
     apt-get install -y \
     curl \
@@ -32,6 +31,12 @@ RUN apt-get update && apt-get install -y postgresql-pgml-15=2.7.0
 # pg vector
 RUN trunk install pgvector
 
+# cache all extensions
+RUN set -eux; \
+      cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
+      cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir
+
+# install python dependencies as postgres user
 USER postgres
 
 RUN pip3 install \
@@ -60,3 +65,5 @@ RUN pip3 install \
     xgboost==1.7.5 \
     langchain==0.0.202 \
     einops==0.6.1
+
+USER 26
