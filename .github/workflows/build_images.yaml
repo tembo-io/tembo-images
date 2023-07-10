@@ -30,7 +30,7 @@ jobs:
           path: ./.tembo
           ref: a0034703ad57d5179c0217beb39b88ca23417f43
       - name: list dir
-        run: ls -la .tembo/actions
+        run: ls -la .tembo/.github/actions
       - name: Find directories with Dockerfiles that changed
         id: find_directories  
         uses: ./.tembo/.github/actions/find-changed-directories
