@@ -78,6 +78,8 @@ jobs:
             registry: "quay.io/tembo"
             publish_latest: true
             publish_calver: true
+            quay_user: ${{ secrets.QUAY_USER }}
+            quay_password: ${{ secrets.QUAY_PASSWORD }}  
             quay_user_tembo: ${{ secrets.QUAY_USER_TEMBO }}
             quay_password_tembo: ${{ secrets.QUAY_PASSWORD_TEMBO }}
   
