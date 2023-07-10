@@ -31,7 +31,7 @@ jobs:
           ref: a0034703ad57d5179c0217beb39b88ca23417f43
       - name: Find directories with Dockerfiles that changed
         id: find_directories  
-        uses: ./.github/actions/find-changed-directories
+        uses: .tembo/.github/actions/find-changed-directories
         with:
           contains_the_file: Dockerfile
           # If the branch does not exist, then it will not
