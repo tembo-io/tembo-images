@@ -1,0 +1,85 @@
+name: Build and push images
+
+on:
+  pull_request: {}
+  push:
+    branches:
+      - 'main'
+      - 'TEM-1290'
+
+jobs:
+  find_directories:
+    name: Find directories with Dockerfiles
+    runs-on: ubuntu-20.04
+    outputs:
+      build_images: ${{ steps.find_directories.outputs.build_matrix }}
+      short_sha: ${{ steps.versions.outputs.SHORT_SHA }}
+      branch_name: ${{ steps.versions.outputs.BRANCH_NAME }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+      - name: Set version strings
+        id: versions
+        run: |
+          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_OUTPUT
+      - name: Check out the coredb repo to reuse some actions
+        uses: actions/checkout@v3
+        with:
+          repository: tembo-io/tembo
+          path: ./.tembo
+          ref: 737713f5839bcd3f533644fe316540d890c611a8
+      - name: list dir
+        run: ls -la .tembo/.github/actions
+      - name: Find directories with Dockerfiles that changed
+        id: find_directories  
+        uses: ./.tembo/.github/actions/find-changed-directories
+        with:
+          contains_the_file: Dockerfile
+          # If the branch does not exist, then it will not
+          # filter any directories containing the file.
+          # This allows for filtering out unchanged directories
+          # in a pull request, and using all directories on the release
+          # or main branches.
+          changed_relative_to_ref: origin/${{ github.base_ref || 'not-a-branch' }}
+          ignore_dirs: ".tembo"
+
+  build_and_push:
+    name: Build and push images
+    runs-on:
+      - self-hosted
+      - dind
+      - large-8x8
+    needs:
+      - find_directories
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.find_directories.outputs.build_images) }}
+    outputs:
+        short_sha: ${{ steps.versions.outputs.SHORT_SHA }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+      - name: Set version strings
+        id: versions
+        run: |
+            echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      - name: Check out the coredb repo to reuse some actions
+        uses: actions/checkout@v3
+        with:
+            repository: tembo-io/tembo
+            path: ./tembo
+            ref: 737713f5839bcd3f533644fe316540d890c611a8
+      - name: Build and upload image
+        uses: ./tembo/.github/actions/build-and-push-to-quay
+        with:
+            image_name: ${{ matrix.name }}
+            docker_directory: ${{ matrix.path }}
+            registry: "quay.io/tembo"
+            publish_latest: true
+            publish_calver: true
+            quay_user: ${{ secrets.QUAY_USER_TEMBO }}
+            quay_password: ${{ secrets.QUAY_PASSWORD_TEMBO }}  
+            quay_user_tembo: ${{ secrets.QUAY_USER_TEMBO }}
+            quay_password_tembo: ${{ secrets.QUAY_PASSWORD_TEMBO }}
+  
