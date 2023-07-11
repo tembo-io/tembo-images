@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - 'main'
-      - 'TEM-1290'
 
 jobs:
   find_directories:
@@ -70,14 +69,29 @@ jobs:
             repository: tembo-io/tembo
             path: ./tembo
             ref: 737713f5839bcd3f533644fe316540d890c611a8
+      - name: Determine which tags to publish
+        id: tags
+        run: |
+          BRANCH_NAME="${{ needs.find_directories.outputs.branch_name }}"
+          if [ "${BRANCH_NAME}" == "main" ]; then
+            echo "tag_latest=true" >> $GITHUB_OUTPUT
+            echo "tag_cargo=true" >> $GITHUB_OUTPUT
+          elif [[ "${BRANCH_NAME}" == release/* ]]; then
+            echo "tag_cargo=true" >> $GITHUB_OUTPUT
+            echo "tag_latest=false" >> $GITHUB_OUTPUT
+          else
+            echo "tag_latest=false" >> $GITHUB_OUTPUT
+            echo "tag_cargo=false" >> $GITHUB_OUTPUT
+          fi
       - name: Build and upload image
         uses: ./tembo/.github/actions/build-and-push-to-quay
         with:
             image_name: ${{ matrix.name }}
             docker_directory: ${{ matrix.path }}
             registry: "quay.io/tembo"
-            publish_latest: true
-            publish_calver: true
+            tag_cargo_version_if_present: ${{ steps.tags.outputs.tag_cargo }}
+            publish_latest: ${{ steps.tags.outputs.tag_latest }}
+            publish_calver: ${{ steps.tags_outputs.tag_latest }}
             quay_user: ${{ secrets.QUAY_USER_TEMBO }}
             quay_password: ${{ secrets.QUAY_PASSWORD_TEMBO }}  
             quay_user_tembo: ${{ secrets.QUAY_USER_TEMBO }}
