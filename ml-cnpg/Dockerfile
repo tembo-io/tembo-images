@@ -64,3 +64,5 @@ RUN pip3 install \
     xgboost==1.7.5 \
     langchain==0.0.202 \
     einops==0.6.1
+
+ENV TRANSFORMERS_CACHE=/var/lib/postgresql/data/tembo/huggingface
