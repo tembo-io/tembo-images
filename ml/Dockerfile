@@ -27,8 +27,9 @@ RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-k
 RUN echo "deb [trusted=yes] https://apt.postgresml.org $(lsb_release -cs) main" >> /etc/apt/sources.list
 RUN apt-get update && apt-get install -y postgresql-pgml-15=2.7.0
 
-# pg vector
+# vector DB extensions
 RUN trunk install pgvector
+RUN trunk install pg_embedding
 
 # cache all extensions
 RUN set -eux; \
