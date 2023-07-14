@@ -7,12 +7,23 @@ COPY requirements.txt .
 
 RUN set -eux;\
   apt-get update; \
-  apt-get upgrade -y
+  apt-get upgrade -y; \
+  apt-get install -y \
+    curl \
+    lsb-release \
+    tzdata \
+    sudo \
+    cmake \
+    libclang-dev \
+    wget \
+    git \
+    gnupg \
+    lsb-release
 
 # Trunk Install Needed Extensions
 RUN set -eux; \
   trunk install postgresml --version 2.7.1; \
-  trunk install pgvector; \
+  trunk install pgvector --version 0.4.2; \
   trunk install hstore_plpython3u; \
   trunk install jsonb_plpython3u; \
   trunk install ltree_plpython3u; \
