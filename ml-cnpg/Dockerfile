@@ -1,3 +1,7 @@
+ARG PGML_VERSION=2.7.1
+ARG PGVECTOR_VERSION=0.4.2
+ARG PGEMBEDDING_VERSION=0.1.0
+
 FROM quay.io/tembo/tembo-pg-cnpg:f857ab0
 USER root
 
@@ -16,12 +20,12 @@ RUN set -eux;\
 
 # Trunk Install Needed Extensions
 RUN set -eux; \
-  trunk install postgresml --version 2.7.1; \
-  trunk install pgvector --version 0.4.2; \
+  trunk install postgresml --version ${PGML_VERSION}; \
+  trunk install pgvector --version ${PGVECTOR_VERSION}; \
   trunk install hstore_plpython3u; \
   trunk install jsonb_plpython3u; \
   trunk install ltree_plpython3u; \
-  trunk install pg_embedding;
+  trunk install pg_embedding --version ${PGEMBEDDING_VERSION}; \
 
 # cache all extensions
 RUN set -eux; \
