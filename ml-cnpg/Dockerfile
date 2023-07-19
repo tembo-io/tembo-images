@@ -25,7 +25,7 @@ RUN set -eux; \
   trunk install pg_embedding --version ${PGEMBEDDING_VERSION}; \
   trunk install hstore_plpython3u; \
   trunk install jsonb_plpython3u; \
-  trunk install ltree_plpython3u; \
+  trunk install ltree_plpython3u;
 
 # cache all extensions
 RUN set -eux; \
