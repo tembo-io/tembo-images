@@ -1,6 +1,10 @@
 FROM quay.io/tembo/tembo-pg-cnpg:f857ab0
 USER root
 
+ARG PGML_VERSION=2.7.1
+ARG PGVECTOR_VERSION=0.4.2
+ARG PGEMBEDDING_VERSION=0.1.0
+
 WORKDIR /
 
 # Install dependencies for running pgml
@@ -16,12 +20,12 @@ RUN set -eux;\
 
 # Trunk Install Needed Extensions
 RUN set -eux; \
-  trunk install postgresml --version 2.7.1; \
-  trunk install pgvector --version 0.4.2; \
+  trunk install postgresml --version ${PGML_VERSION}; \
+  trunk install pgvector --version ${PGVECTOR_VERSION}; \
+  trunk install pg_embedding --version ${PGEMBEDDING_VERSION}; \
   trunk install hstore_plpython3u; \
   trunk install jsonb_plpython3u; \
-  trunk install ltree_plpython3u; \
-  trunk install pg_embedding;
+  trunk install ltree_plpython3u;
 
 # cache all extensions
 RUN set -eux; \
