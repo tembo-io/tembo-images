@@ -3,8 +3,6 @@ USER root
 
 WORKDIR /
 
-COPY requirements.txt .
-
 # Install dependencies for running pgml
 RUN set -eux;\
   apt-get update; \
@@ -36,7 +34,10 @@ USER 26
 
 # Install Python dependencies
 ENV PATH=/var/lib/postgresql/.local/bin:$PATH
+COPY --chown=postgres:postgres requirements.txt .
+COPY --chown=postgres:postgres requirements-xformers.txt .
 RUN set -eux; \
-  pip3 install -r requirements.txt;
+  pip3 install -r requirements.txt; \
+  pip3 install -r requirements-xformers.txt --no-dependencies;
 
-ENV TRANSFORMERS_CACHE=/var/lib/postgresql/data/tembo/huggingface
+ENV XDG_CACHE_HOME=/var/lib/postgresql/data/tembo/.cache
