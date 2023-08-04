@@ -33,9 +33,6 @@ RUN trunk install pg_stat_statements
 # Install auto_explain
 RUN trunk install auto_explain
 
-# Install pg_stat_kcache
-RUN trunk install pg_stat_kcache
-
 # cache pg_stat_statements and auto_explain and pg_stat_kcache to temp directory
 RUN set -eux; \
       cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
