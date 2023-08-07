@@ -45,3 +45,4 @@ RUN set -eux; \
   pip3 install -r requirements-xformers.txt --no-dependencies;
 
 ENV XDG_CACHE_HOME=/var/lib/postgresql/data/tembo/.cache
+ENV VECTORIZE_SOCKET_URL=postgresql:///postgres?host=/controller/run&user=postgres&dbname=postgres
