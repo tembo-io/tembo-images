@@ -60,6 +60,16 @@ RUN set -eux; \
           libsystemd-dev \
           libselinux1-dev \
           libzstd-dev \
+	  # required for kafka_fdw
+	  librdkafka1 \
+   	  # required for pgroonga
+   	  libgroonga0 \
+      	  # required for pgsodium
+      	  libsodium23 \
+	  # required for pgsql_ogr_fdw
+	  libgdal30 \
+   	  # required for pguri
+   	  liburiparser1 \
       ; \
       apt-get autoremove -y; \
       apt-get clean -y; \
