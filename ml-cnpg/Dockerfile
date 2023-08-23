@@ -1,4 +1,4 @@
-FROM quay.io/tembo/tembo-pg-cnpg:cede445
+FROM quay.io/tembo/tembo-pg-cnpg:15.3.0-5-429c3cd
 USER root
 
 ARG PGML_VERSION=2.7.1
