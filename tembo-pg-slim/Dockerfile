@@ -65,13 +65,6 @@ RUN set -eux; \
       apt-get clean -y; \
       rm -rf /var/lib/apt/lists/*
 
-RUN ln -s /usr/lib/jvm/java-11-openjdk-amd64/lib/server/libjvm.so /usr/lib/x86_64-linux-gnu/libjvm.so
-RUN curl -o instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip https://download.oracle.com/otn_software/linux/instantclient/1920000/instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip && \
-    unzip instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip && \
-    cp instantclient_19_20/libclntsh.so.19.1 instantclient_19_20/libnnz19.so instantclient_19_20/libclntshcore.so.19.1 /usr/lib/x86_64-linux-gnu/ && \
-    rm -rf instantclient_19_20 && \
-    rm instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip
-
 WORKDIR postgresql-${PG_VERSION}
 ENV CFLAGS "-g -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-omit-frame-pointer"
 ENV LDFLAGS "-Wl,-z,relro -Wl,-z,now" 
