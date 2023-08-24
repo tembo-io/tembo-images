@@ -60,34 +60,6 @@ RUN set -eux; \
           libsystemd-dev \
           libselinux1-dev \
           libzstd-dev \
-          # install extension dependencies
-          libmysqlclient-dev \
-          libgeos-dev \
-          libproj-dev \
-          libjson-c-dev \
-          libprotobuf-c-dev \
-          libxml2-dev \
-          libboost-serialization1.74-dev \
-          libhiredis-dev \
-          libsybdb5 \
-          r-base-core \
-          openssl \
-          libpcre2-8-0 \
-          libgroonga0 \
-          libopenblas0-pthread \
-          libcurl4 \
-          libsodium23 \
-          libgcc-s1 \
-          librdkafka1 \
-          libgdal30 \
-          libcrypt1 \
-          liburiparser1 \
-          libfreetype6 \
-          libgomp1 \
-          libssl3 \
-          libsfcgal1 \
-          openjdk-11-jdk \
-          libaio1 \
       ; \
       apt-get autoremove -y; \
       apt-get clean -y; \
