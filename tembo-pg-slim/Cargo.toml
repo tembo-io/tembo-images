@@ -1,13 +1,13 @@
 [package]
-name = "coredb-pg-slim"
-version = "15.3.0-coredb-pg-slim.1"
+name = "tembo-pg-slim"
+version = "15.3.0-tembo-pg-slim.1"
 edition = "2021"
 authors = ["tembo.io"]
-description = "CoreDB distribution of postgres"
+description = "Base image for Tembo's distribution of postgres"
 homepage = "https://www.tembo.io"
-license = "MIT"
+license = "Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/tembo-io/tembo/tree/main/postgres"
+repository = "https://github.com/tembo-io/tembo-images/tree/main/tembo-pg-slim"
 publish = false
 
 
