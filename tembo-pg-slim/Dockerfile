@@ -64,7 +64,6 @@ RUN set -eux; \
       apt-get autoremove -y; \
       apt-get clean -y; \
       rm -rf /var/lib/apt/lists/*
-
 WORKDIR postgresql-${PG_VERSION}
 ENV CFLAGS "-g -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-omit-frame-pointer"
 ENV LDFLAGS "-Wl,-z,relro -Wl,-z,now" 
