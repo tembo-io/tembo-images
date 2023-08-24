@@ -5,7 +5,7 @@ ARG TRUNK_VER=0.9.2
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL sparse 
 RUN cargo install --version $TRUNK_VER pg-trunk
 
-FROM quay.io/coredb/coredb-pg-base:latest
+FROM quay.io/tembo/tembo-pg-slim:722acc3
 USER root
 
 # Install trunk
