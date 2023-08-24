@@ -1,4 +1,4 @@
-FROM quay.io/tembo/tembo-pg-cnpg:cede445
+FROM quay.io/tembo/tembo-pg-cnpg:latest
 USER root
 
 ARG PGML_VERSION=2.7.1
@@ -8,15 +8,12 @@ ARG PGEMBEDDING_VERSION=0.1.0
 WORKDIR /
 
 # Install dependencies for running pgml
-RUN set -eux;\
-  apt-get update; \
-  apt-get upgrade -y; \
-  apt-get install -y \
-    libopenblas-base \
-  ; \
-  apt-get autoremove -y; \
-  apt-get clean; \
-	rm -rf /var/lib/apt/lists/*;
+RUN  apt-get update \
+  && apt-get install -y \
+      libopenblas-base \
+  && apt-get autoremove -y \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 # Trunk Install Needed Extensions
 RUN set -eux; \
