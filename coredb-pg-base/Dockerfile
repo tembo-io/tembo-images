@@ -60,20 +60,46 @@ RUN set -eux; \
           libsystemd-dev \
           libselinux1-dev \
           libzstd-dev \
-	  # required for kafka_fdw
-	  librdkafka1 \
-   	  # required for pgroonga
-   	  libgroonga0 \
-      	  # required for pgsodium
-      	  libsodium23 \
-	  # required for pgsql_ogr_fdw
-	  libgdal30 \
-   	  # required for pguri
-   	  liburiparser1 \
+          # install extension dependencies
+          libmysqlclient-dev \
+          libgeos-dev \
+          libproj-dev \
+          libjson-c-dev \
+          libprotobuf-c-dev \
+          libxml2-dev \
+          libboost-serialization1.74-dev \
+          libhiredis-dev \
+          libsybdb5 \
+          r-base-core \
+          openssl \
+          libpcre2-8-0 \
+          libgroonga0 \
+          libopenblas0-pthread \
+          libcurl4 \
+          libsodium23 \
+          libgcc-s1 \
+          librdkafka1 \
+          libgdal30 \
+          libcrypt1 \
+          liburiparser1 \
+          libfreetype6 \
+          libgomp1 \
+          libssl3 \
+          libsfcgal1 \
+          openjdk-11-jdk \
+          libaio1 \
       ; \
       apt-get autoremove -y; \
       apt-get clean -y; \
       rm -rf /var/lib/apt/lists/*
+
+RUN ln -s /usr/lib/jvm/java-11-openjdk-amd64/lib/server/libjvm.so /usr/lib/x86_64-linux-gnu/libjvm.so
+RUN curl -o instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip https://download.oracle.com/otn_software/linux/instantclient/1920000/instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip && \
+    unzip instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip && \
+    cp instantclient_19_20/libclntsh.so.19.1 instantclient_19_20/libnnz19.so instantclient_19_20/libclntshcore.so.19.1 /usr/lib/x86_64-linux-gnu/ && \
+    rm -rf instantclient_19_20 && \
+    rm instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip
+
 WORKDIR postgresql-${PG_VERSION}
 ENV CFLAGS "-g -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-omit-frame-pointer"
 ENV LDFLAGS "-Wl,-z,relro -Wl,-z,now" 
