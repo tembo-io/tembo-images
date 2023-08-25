@@ -1,13 +1,13 @@
 [package]
-name = "tembo-pg-cnpg"
-version = "15.3.0-5"
+name = "standard-cnpg"
+version = "15.3.0-1"
 edition = "2021"
 authors = ["tembo.io"]
-description = "Container image for Tembo's distribution of postgres"
+description = "Container image for Tembo's Standard Stack"
 homepage = "https://www.tembo.io"
 license = "Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/tembo-io/tembo/tree/main/postgres"
+repository = "https://github.com/tembo-io/tembo-images/tree/main/standard-cnpg"
 publish = false
 
 
