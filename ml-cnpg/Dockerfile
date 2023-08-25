@@ -1,4 +1,4 @@
-FROM quay.io/tembo/tembo-pg-cnpg:latest
+FROM quay.io/tembo/standard-cnpg:15.3.0-1-d6f9ddd
 USER root
 
 ARG PGML_VERSION=2.7.1
@@ -17,9 +17,6 @@ RUN  apt-get update \
 
 # Trunk Install Needed Extensions
 RUN set -eux; \
-  trunk install postgresml --version ${PGML_VERSION}; \
-  trunk install pgvector --version ${PGVECTOR_VERSION}; \
-  trunk install pg_embedding --version ${PGEMBEDDING_VERSION}; \
   trunk install hstore_plpython3u; \
   trunk install jsonb_plpython3u; \
   trunk install ltree_plpython3u;
