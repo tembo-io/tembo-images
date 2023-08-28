@@ -60,6 +60,7 @@ RUN set -eux; \
           libsystemd-dev \
           libselinux1-dev \
           libzstd-dev \
+	  vim \
       ; \
       apt-get autoremove -y; \
       apt-get clean -y; \
