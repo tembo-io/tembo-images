@@ -58,7 +58,7 @@ RUN curl -o instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip https://downlo
     rm instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip
 
 # Install zhparser dependency
-RUN wget http://www.xunsearch.com/scws/down/scws-1.2.3.tar.bz2 && \
+RUN curl -o scws-1.2.3.tar.bz2 https://www.xunsearch.com/scws/down/scws-1.2.3.tar.bz2 && \
     tar xvf scws-1.2.3.tar.bz2 && \
     cd scws-1.2.3 && \
     ./configure && \
