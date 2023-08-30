@@ -57,6 +57,16 @@ RUN curl -o instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip https://downlo
     rm -rf instantclient_19_20 && \
     rm instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip
 
+# Install zhparser dependency
+RUN wget http://www.xunsearch.com/scws/down/scws-1.2.3.tar.bz2 && \
+    tar xvf scws-1.2.3.tar.bz2 && \
+    cd scws-1.2.3 && \
+    ./configure && \
+    make install && \
+    cd .. && \
+    rm -rf scws-1.2.3.tar.bz2 scws-1.2.3 && \
+    ln -s /usr/local/lib/libscws.so /usr/lib/x86_64-linux-gnu/libscws.so
+
 # Install barman-cloud
 RUN set -xe; \
 	apt-get update; \
