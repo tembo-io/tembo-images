@@ -67,7 +67,7 @@ RUN set -eux; \
       rm -rf /var/lib/apt/lists/*
 WORKDIR postgresql-${PG_VERSION}
 ENV CFLAGS "-g -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-omit-frame-pointer"
-ENV LDFLAGS "-Wl,-z,relro -Wl,-z,now" 
+ENV LDFLAGS "-Wl,-z,relro -Wl,-z,now"
 RUN ./configure --prefix=/usr/lib/postgresql/${PG_MAJOR} \
         --datarootdir=${ALTDIR} \
         --libdir=${ALTDIR}/${PG_MAJOR}/lib \
@@ -92,29 +92,18 @@ RUN ./configure --prefix=/usr/lib/postgresql/${PG_MAJOR} \
         --with-lz4 \
         --with-zstd \
         --with-systemd \
-        --with-selinux 
+        --with-selinux
 
 RUN make -j$(nproc)
 RUN make install
 RUN cd .. && rm postgresql-${PG_VERSION}.tar.bz2
 
-#COPY ./postgresql.conf /usr/share/postgresql/${PG_MAJOR}/postgresql.conf.sample
-
 # Remove pre-installed pg_config
 RUN rm /usr/bin/pg_config
-
-# cache extensions and shared libraries
-RUN set -eux; \
-      mkdir /tmp/pg_sharedir; \
-      mkdir /tmp/pg_pkglibdir; \
-      cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir; \
-      cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir
 
 RUN mkdir -p /var/run/postgresql && chmod 775 /var/run/postgresql
 RUN mkdir -p /usr/share/postgresql/${PG_MAJOR}/extension && chmod 775 /usr/share/postgresql/${PG_MAJOR}/extension
 
-#COPY docker-entrypoint.sh /usr/local/bin/
-#ENTRYPOINT ["docker-entrypoint.sh"]
 
 USER postgres
 CMD ["postgres"]
