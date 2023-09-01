@@ -1,4 +1,4 @@
-FROM quay.io/tembo/standard-cnpg:15.3.0-1-d6f9ddd
+FROM quay.io/tembo/standard-cnpg:15.3.0-1-0c19c7e
 USER root
 
 ARG PGML_VERSION=2.7.1
