@@ -15,7 +15,7 @@ RUN mkdir -p $PGDATA
 RUN chown -R postgres:postgres $PGDATA && \
     chmod -R 0700 $PGDATA
 USER postgres
-RUN pg_ctl init
+RUN pg_ctl -c init
 RUN mkdir -p $PGDATA/extra-configs
 RUN mkdir -p $PGDATA/startup-scripts
 # Set permissive authentication
