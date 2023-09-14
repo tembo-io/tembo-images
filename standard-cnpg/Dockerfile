@@ -57,6 +57,12 @@ RUN curl -o instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip https://downlo
     rm -rf instantclient_19_20 && \
     rm instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip
 
+# Install duckdb libs
+RUN curl -o libduckdb-linux-amd64.zip https://github.com/duckdb/duckdb/releases/download/v0.8.1/libduckdb-linux-amd64.zip && \
+    unzip libduckdb-linux-amd64.zip && \
+    cp libduckdb.so /usr/lib/x86_64-linux-gnu/ && \
+    rm -rf libduckdb-linux-amd64.zip libduckdb.so
+
 # Install barman-cloud
 RUN set -xe; \
 	apt-get update; \
