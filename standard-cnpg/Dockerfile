@@ -42,6 +42,7 @@ RUN set -eux; \
           libsfcgal1 \
           openjdk-11-jdk \
           libaio1 \
+          wget \
       ; \
       apt-get autoremove -y; \
       apt-get clean -y; \
@@ -56,6 +57,12 @@ RUN curl -o instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip https://downlo
     cp instantclient_19_20/libclntsh.so.19.1 instantclient_19_20/libnnz19.so instantclient_19_20/libclntshcore.so.19.1 /usr/lib/x86_64-linux-gnu/ && \
     rm -rf instantclient_19_20 && \
     rm instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip
+
+# Install duckdb libs
+RUN wget https://github.com/duckdb/duckdb/releases/download/v0.8.1/libduckdb-linux-amd64.zip && \
+    unzip libduckdb-linux-amd64.zip && \
+    cp libduckdb.so /usr/lib/x86_64-linux-gnu/ && \
+    rm -rf libduckdb-linux-amd64.zip libduckdb.so
 
 # Install barman-cloud
 RUN set -xe; \
