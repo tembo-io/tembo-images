@@ -19,6 +19,7 @@ RUN set -eux; \
           libgeos-dev \
           libproj-dev \
           libjson-c-dev \
+          libjson-perl \
           libprotobuf-c-dev \
           libxml2-dev \
           libboost-serialization1.74-dev \
