@@ -35,7 +35,8 @@ RUN git clone https://github.com/aws/aws-sdk-cpp.git && \
     mkdir build && cd build && \
     cmake -DBUILD_ONLY="s3;core;config;sts;cognito-identity;transfer;identity-management" -DAUTORUN_UNIT_TESTS=OFF -DCMAKE_CXX_FLAGS=-Wno-error=deprecated-declarations .. && \
     make -j$(nproc) && \
-    make install
+    make install && \
+    cd ../../ && rm -rf aws-sdk-cpp
 
 # Clone and build Apache Arrow
 RUN git clone https://github.com/apache/arrow.git && \
@@ -45,22 +46,20 @@ RUN git clone https://github.com/apache/arrow.git && \
     mkdir build && cd build && \
     cmake -DARROW_PARQUET=ON -DARROW_S3=ON -DARROW_WITH_SNAPPY=ON .. && \ 
     make -j$(nproc) && \
-    make install
+    make install && \
+    cd ../../ && rm -rf arrow
 
 # Clone and build parquet_s3_fdw
 RUN git clone https://github.com/pgspider/parquet_s3_fdw.git && \
     cd parquet_s3_fdw && \
     git checkout v1.0.0 && \
-    make USE_PGXS=1 install
+    make USE_PGXS=1 install && \
+    cd .. && rm -rf parquet_s3_fdw
 
 # cache all extensions
 RUN set -eux; \
       cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
       cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir;
-
-# Clean up to keep the container slim
-RUN apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /aws-sdk-cpp /arrow /parquet_s3_fdw
 
 ENV LD_LIBRARY_PATH=/usr/local:$LD_LIBRARY_PATH
 ENV XDG_CACHE_HOME=/var/lib/postgresql/data/tembo/.cache
