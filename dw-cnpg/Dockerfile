@@ -35,7 +35,8 @@ RUN git clone https://github.com/aws/aws-sdk-cpp.git && \
     mkdir build && cd build && \
     cmake -DBUILD_ONLY="s3;core;config;sts;cognito-identity;transfer;identity-management" -DAUTORUN_UNIT_TESTS=OFF -DCMAKE_CXX_FLAGS=-Wno-error=deprecated-declarations .. && \
     make -j$(nproc) && \
-    make install
+    make install && \
+    cd ../../ && rm -rf aws-sdk-cpp
 
 # Clone and build Apache Arrow
 RUN git clone https://github.com/apache/arrow.git && \
