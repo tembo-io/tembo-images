@@ -8,6 +8,8 @@ RUN apt-get update && \
     apt-get clean -y && \
     rm -rf /var/lib/apt/lists/*
 
+RUN chown -R postgres:postgres $PGDATA && \
+    chmod -R 0700 $PGDATA
 # Set up the environment for the data directory
 ENV PGDATA /var/lib/postgresql/data2
 RUN mkdir -p $PGDATA && \
