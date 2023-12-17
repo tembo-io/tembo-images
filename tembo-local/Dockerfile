@@ -2,7 +2,6 @@ FROM quay.io/tembo/standard-cnpg:latest
 
 USER root
 
-# Existing commands
 RUN apt-get update && \
     apt-get install -y vim openssl && \
     apt-get autoremove -y && \
@@ -28,7 +27,6 @@ USER postgres
 # Initialize the database
 RUN pg_ctl -c init
 
-# Other setup (if any)
 RUN mkdir -p $PGDATA/extra-configs
 RUN mkdir -p $PGDATA/startup-scripts
 
