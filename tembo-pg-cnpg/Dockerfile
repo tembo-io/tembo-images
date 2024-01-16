@@ -1,6 +1,6 @@
 FROM rust:1.70-bookworm as builder
 
-ARG TRUNK_VER=0.12.3
+ARG TRUNK_VER=0.12.12
 
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL sparse 
 RUN cargo install --version $TRUNK_VER pg-trunk
