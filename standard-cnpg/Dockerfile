@@ -44,6 +44,7 @@ RUN set -eux; \
           openjdk-11-jdk \
           libaio1 \
           wget \
+          libbson-dev \
       ; \
       apt-get autoremove -y; \
       apt-get clean -y; \
