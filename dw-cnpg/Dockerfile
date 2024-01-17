@@ -1,4 +1,4 @@
-FROM quay.io/tembo/standard-cnpg:15.3.0-1-1096aeb
+FROM quay.io/tembo/standard-cnpg:15.3.0-1-795fc99
 USER root
 
 WORKDIR /
