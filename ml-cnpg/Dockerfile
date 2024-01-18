@@ -47,7 +47,7 @@ RUN set -eux; \
   pip3 install -r requirements-xformers.txt --no-dependencies;
 
 # install pgml
-RUN echo "deb [trusted=yes] https://apt.postgresml.org $(lsb_release -cs) main" | sudo tee -a /etc/apt/sources.list
+RUN echo "deb [trusted=yes] https://apt.postgresml.org $(lsb_release -cs) main" | tee -a /etc/apt/sources.list
 RUN apt-get update && apt-get install -y postgresql-pgml-15=2.8.1
 
 # RUN git clone https://github.com/postgresml/postgresml && \
