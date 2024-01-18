@@ -1,1 +1,29 @@
+accelerate
+auto-gptq; sys_platform == 'linux'
+bitsandbytes
+catboost
+ctransformers
+datasets
+deepspeed
+einops
+huggingface-hub
+InstructorEmbedding
+langchain
+lightgbm
+optimum
+orjson
+peft
+pyarrow==11.0.0
+rouge
+sacrebleu
+sacremoses
+sentence-transformers
+tokenizers
+torch
+torchaudio
+torchvision
+transformers
+transformers-stream-generator
+xformers; sys_platform == 'linux'
 xformers==0.0.20
+xgboost
