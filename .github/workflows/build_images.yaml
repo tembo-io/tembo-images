@@ -138,5 +138,5 @@ jobs:
             --build-arg PG_VERSION=${{ matrix.pg_version }} \
             --build-arg PG_MAJOR=${{ matrix.pg_major }} \
             --platform linux/amd64,linux/arm64 \
-            --tag quay.io/coredb/c-builder:pg${{ matrix.pg_version }} \
+            --tag quay.io/coredb/tembo-pg-slim:pg${{ matrix.pg_version }} \
             --pull ${PUSH_FLAG} ./tembo-pg-slim
