@@ -31,10 +31,10 @@ RUN set -xe; \
 	rm -rf /var/lib/apt/lists/*;
 
 # Install pg_stat_statements
-RUN trunk install --registry https://trunk-registry.cdb-dev.com pg_stat_statements
+RUN trunk install pg_stat_statements
 
 # Install auto_explain
-RUN trunk install --registry https://trunk-registry.cdb-dev.com auto_explain
+RUN trunk install auto_explain
 
 # cache pg_stat_statements and auto_explain and pg_stat_kcache to temp directory
 RUN set -eux; \
