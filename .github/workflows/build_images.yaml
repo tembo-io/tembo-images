@@ -175,6 +175,6 @@ jobs:
           fi
           docker buildx build \
             --build-arg PG_VERSION=${{ matrix.pg_version }} \
-            --platform linux/amd64 \
+            --platform linux/amd64,linux/arm64 \
             --tag quay.io/tembo/tembo-pg-cnpg:pg${{ matrix.pg_version }}-${{ steps.sha.outputs.sha }} \
             --pull ${PUSH_FLAG} ./tembo-pg-cnpg
