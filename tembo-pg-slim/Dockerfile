@@ -4,7 +4,7 @@ FROM quay.io/coredb/ubuntu:22.04
 ARG DEBIAN_FRONTEND=noninteractive
 ARG ALTDIR=/var/lib/postgresql/data/tembo
 ENV TZ=Etc/UTC
-ARG PGDATA /var/lib/postgresql/data
+ENV PGDATA /var/lib/postgresql/data
 ARG PG_VERSION 15.3
 ARG PG_MAJOR 15
 ENV PATH $PATH:/usr/lib/postgresql/$PG_MAJOR/bin

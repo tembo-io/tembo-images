@@ -134,7 +134,7 @@ jobs:
           docker buildx build \
             --build-arg PG_VERSION=${{ matrix.pg_version }} \
             --build-arg PG_MAJOR=${{ matrix.pg_major }} \
-            --platform linux/amd64,linux/arm64 \
+            --platform linux/amd64 \
             --tag quay.io/tembo/tembo-pg-slim:pg${{ matrix.pg_major }} \
             --pull ${PUSH_FLAG} ./tembo-pg-slim
 
