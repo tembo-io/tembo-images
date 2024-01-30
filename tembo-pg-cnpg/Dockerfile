@@ -11,6 +11,9 @@ FROM quay.io/tembo/tembo-pg-slim:pg${PG_VERSION}
 
 USER root
 
+# PGDATA is set in tembo-pg-slim and used by dependents on this image.
+RUN if [ -z "${PGDATA}" ]; then echo "PGDATA is not set"; exit 1; fi
+
 # Install trunk
 COPY --from=builder /usr/local/cargo/bin/trunk /usr/bin/trunk
 COPY ./requirements.txt .
