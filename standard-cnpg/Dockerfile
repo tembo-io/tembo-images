@@ -1,3 +1,5 @@
+ARG PG_VERSION=15
+
 FROM rust:1.70-bookworm as builder
 
 ARG TRUNK_VER=0.10.5
@@ -5,7 +7,8 @@ ARG TRUNK_VER=0.10.5
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL sparse 
 RUN cargo install --version $TRUNK_VER pg-trunk
 
-FROM quay.io/tembo/tembo-pg-slim:15.3.0-tembo-pg-slim.1-cd62faf
+FROM quay.io/tembo/tembo-pg-slim:pg${PG_VERSION}
+
 USER root
 
 # Install trunk
@@ -83,6 +86,8 @@ RUN trunk install auto_explain
 
 # cache pg_stat_statements and auto_explain and pg_stat_kcache to temp directory
 RUN set -eux; \
+	    mkdir /tmp/pg_pkglibdir; \
+	    mkdir /tmp/pg_sharedir; \
       cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
       cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir
 
