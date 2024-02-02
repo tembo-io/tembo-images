@@ -53,7 +53,7 @@ jobs:
 
           # Use jq to properly append the configurations, ensuring valid JSON format
           # Note: This requires jq to be installed or available in the runner environment
-          MODIFIED_MATRIX=$(echo $INITIAL_MATRIX | jq --argjson pgConfigs "$PG_CONFIGS" '.include += $pgConfigs')
+          MODIFIED_MATRIX=$(echo $INITIAL_MATRIX | jq -c --argjson pgConfigs "$PG_CONFIGS" '.include += $pgConfigs')
 
           echo "Modified Matrix: $MODIFIED_MATRIX"
           
