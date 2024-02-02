@@ -5,9 +5,9 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG ALTDIR=/var/lib/postgresql/data/tembo
 ENV TZ=Etc/UTC
 ENV PGDATA /var/lib/postgresql/data
-ARG PG_VERSION 15.3
-ARG PG_MAJOR 15
-ENV PATH $PATH:/usr/lib/postgresql/$PG_MAJOR/bin
+ARG PG_RELEASE 15.3
+ARG PG_VERSION 15
+ENV PATH $PATH:/usr/lib/postgresql/$PG_VERSION/bin
 
 # Set the postgres user's permissions
 RUN set -eux; \
@@ -31,8 +31,8 @@ ENV LANG en_US.utf8
 RUN mkdir /docker-entrypoint-initdb.d
 
 # Build Postgres from source
-RUN curl https://ftp.postgresql.org/pub/source/v${PG_VERSION}/postgresql-${PG_VERSION}.tar.bz2 -o postgresql-${PG_VERSION}.tar.bz2
-RUN tar xf postgresql-${PG_VERSION}.tar.bz2
+RUN curl https://ftp.postgresql.org/pub/source/v${PG_RELEASE}/postgresql-${PG_RELEASE}.tar.bz2 -o postgresql-${PG_RELEASE}.tar.bz2
+RUN tar xf postgresql-${PG_RELEASE}.tar.bz2
 RUN set -eux; \
       apt-get update && apt-get install -y \
           libreadline-dev \
@@ -65,7 +65,7 @@ RUN set -eux; \
       apt-get autoremove -y; \
       apt-get clean -y; \
       rm -rf /var/lib/apt/lists/*
-WORKDIR postgresql-${PG_VERSION}
+WORKDIR postgresql-${PG_RELEASE}
 ENV CFLAGS "-g -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-omit-frame-pointer"
 ENV LDFLAGS "-Wl,-z,relro -Wl,-z,now"
 RUN ./configure --prefix=/usr/lib/postgresql/${PG_MAJOR} \
@@ -96,7 +96,7 @@ RUN ./configure --prefix=/usr/lib/postgresql/${PG_MAJOR} \
 
 RUN make -j$(nproc)
 RUN make install
-RUN cd .. && rm postgresql-${PG_VERSION}.tar.bz2
+RUN cd .. && rm postgresql-${PG_RELEASE}.tar.bz2
 
 # Remove pre-installed pg_config
 RUN rm /usr/bin/pg_config
