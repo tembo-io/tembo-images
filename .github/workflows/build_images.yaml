@@ -44,12 +44,22 @@ jobs:
       - name: Append PostgreSQL configurations to matrix
         id: append_pg_configs
         run: |
-          INITIAL_MATRIX="${{ steps.find_directories.outputs.build_matrix }}"
+          # Read the initial matrix from the output of a previous step
+          INITIAL_MATRIX="${{ toJson(steps.find_directories.outputs.build_matrix) }}"
           echo "Initial Matrix: $INITIAL_MATRIX"
-          PG_CONFIGS=', {"pg_release": "14.10", "pg_version": "14"}, {"pg_release": "15.3", "pg_version": "15"}, {"pg_release": "16.1", "pg_version": "16"}]'
-          MODIFIED_MATRIX="${INITIAL_MATRIX%]}${PG_CONFIGS}]"
+
+          # Define PostgreSQL configurations to append
+          PG_CONFIGS='[{"pg_release": "14.10", "pg_version": "14"}, {"pg_release": "15.3", "pg_version": "15"}, {"pg_release": "16.1", "pg_version": "16"}]'
+
+          # Use jq to properly append the configurations, ensuring valid JSON format
+          # Note: This requires jq to be installed or available in the runner environment
+          MODIFIED_MATRIX=$(echo $INITIAL_MATRIX | jq --argjson pgConfigs "$PG_CONFIGS" '.include += $pgConfigs')
+
           echo "Modified Matrix: $MODIFIED_MATRIX"
-          echo "::set-output name=build_matrix::$MODIFIED_MATRIX"
+          
+          # Use the new syntax for setting outputs
+          echo "build_matrix=$MODIFIED_MATRIX" >> $GITHUB_OUTPUT
+
 
   build_and_push:
     name: Build and push images
