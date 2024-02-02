@@ -41,16 +41,14 @@ jobs:
           # in a pull request, and using all directories on the release
           # or main branches.
           changed_relative_to_ref: origin/${{ github.base_ref || 'not-a-branch' }}
-          ignore_dirs: ".tembo, tembo-pg-slim, tembo-pg-cnpg"
       - name: Append PostgreSQL configurations to matrix
         id: append_pg_configs
         run: |
-          # Read the output from the previous step
           INITIAL_MATRIX="${{ steps.find_directories.outputs.build_matrix }}"
-          # Assuming INITIAL_MATRIX is a valid JSON array string, append pg configurations
-          # This is a placeholder; you'd replace it with your actual JSON manipulation
+          echo "Initial Matrix: $INITIAL_MATRIX"
           PG_CONFIGS=', {"pg_release": "14.10", "pg_version": "14"}, {"pg_release": "15.3", "pg_version": "15"}, {"pg_release": "16.1", "pg_version": "16"}]'
           MODIFIED_MATRIX="${INITIAL_MATRIX%]}${PG_CONFIGS}]"
+          echo "Modified Matrix: $MODIFIED_MATRIX"
           echo "::set-output name=build_matrix::$MODIFIED_MATRIX"
 
   build_and_push:
@@ -105,145 +103,4 @@ jobs:
             quay_password_tembo: ${{ secrets.QUAY_PASSWORD_TEMBO }} 
             gha_iam_role: ${{ secrets.GHA_IAM_ROLE }}
             ecr_registry: ${{ secrets.ECR_REGISTRY }}
-
-  build_and_push_pg_slim:
-    name: Build and push tembo-pg-slim
-    runs-on:
-      - self-hosted
-      - dind
-      - large-8x8
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - pg_release: "14.10"
-            pg_version: "14"
-          - pg_release: "15.3"
-            pg_version: "15"
-          - pg_release: "16.1"
-            pg_version: "16"
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Login to Quay.io
-        uses: docker/login-action@v2
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USER_TEMBO }}
-          password: ${{ secrets.QUAY_PASSWORD_TEMBO }}
-      - name: Build and push
-        run: |
-          set -xe
-          BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
-          PUSH_FLAG=""
-          if [ "${BRANCH_NAME}" == "main" ]; then
-            PUSH_FLAG="--push"
-          fi
-          docker buildx build \
-            --build-arg PG_RELEASE=${{ matrix.pg_release }} \
-            --build-arg PG_VERSION=${{ matrix.pg_version }} \
-            --platform linux/amd64 \
-            --tag quay.io/tembo/tembo-pg-slim:pg${{ matrix.pg_major }} \
-            --pull ${PUSH_FLAG} ./tembo-pg-slim
-
-  build_and_push_pg_cnpg:
-    name: Build and push tembo-pg-cnpg
-    runs-on:
-      - self-hosted
-      - dind
-      - large-8x8
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - pg_version: "14"
-          - pg_version: "15"
-          - pg_version: "16"
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Login to Quay.io
-        uses: docker/login-action@v2
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USER_TEMBO }}
-          password: ${{ secrets.QUAY_PASSWORD_TEMBO }}
-      - name: Get short SHA
-        id: sha
-        run: echo "::set-output name=sha::$(git rev-parse --short HEAD)"
-      - name: Build and push
-        run: |
-          set -xe
-          BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
-          PUSH_FLAG=""
-          if [ "${BRANCH_NAME}" == "main" ]; then
-            PUSH_FLAG="--push"
-          fi
-          docker buildx build \
-            --build-arg PG_VERSION=${{ matrix.pg_version }} \
-            --platform linux/amd64 \
-            --tag quay.io/tembo/tembo-pg-cnpg:pg${{ matrix.pg_version }}-${{ steps.sha.outputs.sha }} \
-            --pull ${PUSH_FLAG} ./tembo-pg-cnpg
-
-  build_and_push_standard_cnpg:
-    name: Build and push standard-cnpg
-    runs-on:
-      - self-hosted
-      - dind
-      - large-8x8
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - pg_version: "14"
-          - pg_version: "15"
-          - pg_version: "16"
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Login to Quay.io
-        uses: docker/login-action@v2
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USER_TEMBO }}
-          password: ${{ secrets.QUAY_PASSWORD_TEMBO }}
-      - name: Get short SHA
-        id: sha
-        run: echo "::set-output name=sha::$(git rev-parse --short HEAD)"
-      - name: Build and push
-        run: |
-          set -xe
-          BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
-          PUSH_FLAG=""
-          if [ "${BRANCH_NAME}" == "main" ]; then
-            PUSH_FLAG="--push"
-          fi
-          docker buildx build \
-            --build-arg PG_VERSION=${{ matrix.pg_version }} \
-            --platform linux/amd64 \
-            --tag quay.io/tembo/standard-cnpg:pg${{ matrix.pg_version }}-${{ steps.sha.outputs.sha }} \
-            --pull ${PUSH_FLAG} ./standard-cnpg
-      - name: Configure AWS credentials for ECR
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.GHA_IAM_ROLE }}
-          role-session-name: images-gha-docker-build-and-push
-          aws-region: 'us-east-1'
-      - name: Install awscli
-        uses: unfor19/install-aws-cli-action@v1
-      - name: Push to ECR
-        shell: bash
-        run: |
-          set -xe
-          IFS=' ' read -ra TAG_ARRAY <<< "${{ steps.tags.outputs.TAGS }}"
-          for tag in "${TAG_ARRAY[@]}"; do
-            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}/tembo-io/standard-cnpg
-            docker tag standard-cnpg:$tag ${{ secrets.ECR_REGISTRY }}/tembo-io/standard-cnpg:pg${{ matrix.pg_version }}$tag
-            docker push ${{ secrets.ECR_REGISTRY }}/tembo-io/standard-cnpg:pg${{ matrix.pg_version }}$tag
-          done
+            pg_version: ${{ matrix.pg_version }}
