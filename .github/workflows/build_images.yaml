@@ -219,3 +219,21 @@ jobs:
             --platform linux/amd64 \
             --tag quay.io/tembo/standard-cnpg:pg${{ matrix.pg_version }}-${{ steps.sha.outputs.sha }} \
             --pull ${PUSH_FLAG} ./standard-cnpg
+      - name: Configure AWS credentials for ECR
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.GHA_IAM_ROLE }}
+          role-session-name: images-gha-docker-build-and-push
+          aws-region: 'us-east-1'
+      - name: Install awscli
+        uses: unfor19/install-aws-cli-action@v1
+      - name: Push to ECR
+        shell: bash
+        run: |
+          set -xe
+          IFS=' ' read -ra TAG_ARRAY <<< "${{ steps.tags.outputs.TAGS }}"
+          for tag in "${TAG_ARRAY[@]}"; do
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}/tembo-io/standard-cnpg
+            docker tag standard-cnpg:$tag ${{ secrets.ECR_REGISTRY }}/tembo-io/standard-cnpg:pg${{ matrix.pg_version }}$tag
+            docker push ${{ secrets.ECR_REGISTRY }}/tembo-io/standard-cnpg:pg${{ matrix.pg_version }}$tag
+          done
