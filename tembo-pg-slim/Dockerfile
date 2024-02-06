@@ -9,6 +9,11 @@ ARG PG_RELEASE 15.3
 ARG PG_VERSION 15
 ENV PATH $PATH:/usr/lib/postgresql/$PG_VERSION/bin
 
+# Get latest package updates
+RUN set -eux; \
+      apt-get update; \
+      apt-get upgrade -y 
+
 # Set the postgres user's permissions
 RUN set -eux; \
       groupadd -r postgres --gid=999; \
@@ -68,9 +73,9 @@ RUN set -eux; \
 WORKDIR postgresql-${PG_RELEASE}
 ENV CFLAGS "-g -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-omit-frame-pointer"
 ENV LDFLAGS "-Wl,-z,relro -Wl,-z,now"
-RUN ./configure --prefix=/usr/lib/postgresql/${PG_MAJOR} \
+RUN ./configure --prefix=/usr/lib/postgresql/${PG_VERSION} \
         --datarootdir=${ALTDIR} \
-        --libdir=${ALTDIR}/${PG_MAJOR}/lib \
+        --libdir=${ALTDIR}/${PG_VERSION}/lib \
         --with-perl \
         --with-python \
         --with-tcl \
@@ -98,12 +103,14 @@ RUN make -j$(nproc)
 RUN make install
 RUN cd .. && rm postgresql-${PG_RELEASE}.tar.bz2
 
+WORKDIR /
+RUN rm -rf /postgresql-${PG_RELEASE}
+
 # Remove pre-installed pg_config
 RUN rm /usr/bin/pg_config
 
 RUN mkdir -p /var/run/postgresql && chmod 775 /var/run/postgresql
 RUN mkdir -p /usr/share/postgresql/${PG_MAJOR}/extension && chmod 775 /usr/share/postgresql/${PG_MAJOR}/extension
-
 
 USER postgres
 CMD ["postgres"]

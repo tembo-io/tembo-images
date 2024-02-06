@@ -1,4 +1,7 @@
-FROM quay.io/tembo/standard-cnpg:15.3.0-1-795fc99
+ARG PG_VERSION=15
+ARG TAG=latest
+
+FROM quay.io/tembo/standard-cnpg:pg${PG_VERSION}-${TAG}
 USER root
 
 WORKDIR /
