@@ -6,11 +6,18 @@ on:
       - main
     paths:
       - 'tembo-pg-slim/**'
+      - 'standard-cnpg/**'
+      - 'dw-cnpg/**'
+      - 'ml-cnpg/**'
   pull_request:
     branches:
       - main
     paths:
       - 'tembo-pg-slim/**'
+      - 'standard-cnpg/**'
+      - 'dw-cnpg/**'
+      - 'ml-cnpg/**'
+
 
 jobs:
   pre-build:
