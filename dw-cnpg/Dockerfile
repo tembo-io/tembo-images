@@ -59,7 +59,7 @@ RUN git clone https://github.com/apache/arrow.git && \
 # Clone and build parquet_s3_fdw
 RUN git clone https://github.com/pgspider/parquet_s3_fdw.git && \
     cd parquet_s3_fdw && \
-    git checkout v1.0.0 && \
+    git checkout v1.1.0 && \
     make USE_PGXS=1 install && \
     cd .. && rm -rf parquet_s3_fdw
 
