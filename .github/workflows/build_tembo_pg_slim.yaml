@@ -1,0 +1,294 @@
+name: build-tembo-pg-slim
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'tembo-pg-slim/**'
+      - 'standard-cnpg/**'
+      - 'dw-cnpg/**'
+      - 'ml-cnpg/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'tembo-pg-slim/**'
+      - 'standard-cnpg/**'
+      - 'dw-cnpg/**'
+      - 'ml-cnpg/**'
+
+
+jobs:
+  pre-build:
+    runs-on: ubuntu-latest
+    outputs:
+      short_sha: ${{ steps.versions.outputs.SHORT_SHA }}
+      branch_name: ${{ steps.versions.outputs.BRANCH_NAME }}
+      build_matrix: ${{ steps.append_pg_configs.outputs.build_matrix }}
+      tags: ${{ steps.tags.outputs.tags }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - name: Set version strings
+        id: versions
+        run: |
+          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_OUTPUT
+      - name: Append PostgreSQL configurations to matrix
+        id: append_pg_configs
+        run: |
+          PG_CONFIGS='[{"pg_release": "14.10", "pg_version": "14"}, {"pg_release": "15.3", "pg_version": "15"}, {"pg_release": "16.1", "pg_version": "16"}]'
+          MODIFIED_MATRIX=$(echo $PG_CONFIGS | jq -c '{include: .}')
+          echo "build_matrix=$MODIFIED_MATRIX" >> $GITHUB_OUTPUT
+      - name: Determine which tags to publish
+        id: tags_list
+        run: |
+          BRANCH_NAME="${{ steps.versions.outputs.BRANCH_NAME }}"
+          if [ "${BRANCH_NAME}" == "main" ]; then
+            echo "tag_latest=true" >> $GITHUB_OUTPUT
+            echo "tag_cargo=true" >> $GITHUB_OUTPUT
+          elif [[ "${BRANCH_NAME}" == release/* ]]; then
+            echo "tag_cargo=true" >> $GITHUB_OUTPUT
+            echo "tag_latest=false" >> $GITHUB_OUTPUT
+          else
+            echo "tag_latest=false" >> $GITHUB_OUTPUT
+            echo "tag_cargo=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Install TOML parser
+        run: |
+         set -xe
+         wget https://github.com/freshautomations/stoml/releases/download/v0.7.1/stoml_linux_amd64
+         mv stoml_linux_amd64 stoml
+         chmod +x stoml
+         sudo mv stoml /usr/local/bin/
+      - name: Create whitespace-separated tags list
+        id: tags
+        run: |
+          SHORT_SHA="${{ steps.versions.outputs.SHORT_SHA }}"
+          TAGS=''
+          if [ "${{ steps.tags_list.outputs.tag_cargo }}" == "true" ]; then
+              echo "Cargo file detected, adding to tags"
+              VERSION=$(stoml Cargo.toml package.version)-${SHORT_SHA}
+              TAGS="$TAGS $VERSION"
+          fi
+          if [ "${{ steps.tags_list.outputs.tag_latest }}" == "true" ]; then
+            TAGS="$TAGS latest"
+          fi
+          TAGS="$TAGS ${SHORT_SHA}"
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
+      - name: Debug outputs
+        run: |
+          echo "Short SHA: ${{ steps.versions.outputs.SHORT_SHA }}"
+          echo "Branch Name: ${{ steps.versions.outputs.BRANCH_NAME }}"
+          echo "Build Matrix: ${{ steps.append_pg_configs.outputs.build_matrix }}"
+          echo "Tags: ${{ steps.tags.outputs.tags }}"
+
+  tembo-pg-slim-build:
+    needs: pre-build
+    permissions:
+      id-token: write
+      contents: read
+    runs-on:
+      - self-hosted
+      - dind
+      - large-8x8
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.pre-build.outputs.build_matrix)}}
+    env:
+      CONTAINER_NAME: "tembo-pg-slim"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker images based on conditions
+        run: |
+          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          docker build ./$CONTAINER_NAME --build-arg PG_RELEASE=${{ matrix.pg_release }} --build-arg PG_VERSION=${{ matrix.pg_version }} -t $IMAGE_NAME
+        shell: bash
+      - name: Login to Tembo Quay
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ secrets.QUAY_REPOSITORY }}
+          username: ${{ secrets.QUAY_USER_TEMBO }}
+          password: ${{ secrets.QUAY_PASSWORD_TEMBO }}
+      - name: Push to Quay
+        shell: bash
+        run: |
+          set -xe
+          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
+          for tag in "${TAG_ARRAY[@]}"; do
+          docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
+            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag 
+          done
+
+  standard-cnpg-build:
+    needs: [pre-build, tembo-pg-slim-build]
+    permissions:
+      id-token: write
+      contents: read
+    runs-on:
+      - self-hosted
+      - dind
+      - large-8x8
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.pre-build.outputs.build_matrix)}}
+    env:
+      CONTAINER_NAME: "standard-cnpg"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker images based on conditions
+        run: |
+          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          docker build ./$CONTAINER_NAME --build-arg PG_RELEASE=${{ matrix.pg_release }} --build-arg PG_VERSION=${{ matrix.pg_version }} --build-arg TAG=${{ needs.pre-build.outputs.short_sha }} -t $IMAGE_NAME
+        shell: bash
+      - name: Login to Tembo Quay
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ secrets.QUAY_REPOSITORY }}
+          username: ${{ secrets.QUAY_USER_TEMBO }}
+          password: ${{ secrets.QUAY_PASSWORD_TEMBO }}
+      - name: Push to Quay
+        shell: bash
+        run: |
+          set -xe
+          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
+          for tag in "${TAG_ARRAY[@]}"; do
+          docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
+            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag 
+          done
+      - name: Configure AWS credentials for ECR
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.GHA_IAM_ROLE }}
+          role-session-name: images-gha-docker-build-and-push
+          aws-region: "us-east-1"
+      - name: Install awscli
+        uses: unfor19/install-aws-cli-action@v1
+      - name: Push to ECR
+        shell: bash
+        run: |
+          set -xe
+          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
+          for tag in "${TAG_ARRAY[@]}"; do
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}/$CONTAINER_NAME
+            docker tag $IMAGE_NAME ${{ secrets.ECR_REGISTRY }}/$IMAGE_NAME-$tag
+            docker push ${{ secrets.ECR_REGISTRY }}/$IMAGE_NAME-$tag
+          done
+
+  ml-cnpg-build:
+    needs: [pre-build, standard-cnpg-build]
+    permissions:
+      id-token: write
+      contents: read
+    runs-on:
+      - self-hosted
+      - dind
+      - large-8x8
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.pre-build.outputs.build_matrix)}}
+    env:
+      CONTAINER_NAME: "ml-cnpg"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker images based on conditions
+        run: |
+          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          docker build ./$CONTAINER_NAME --build-arg PG_RELEASE=${{ matrix.pg_release }} --build-arg PG_VERSION=${{ matrix.pg_version }} --build-arg TAG=${{ needs.pre-build.outputs.short_sha }} -t $IMAGE_NAME
+        shell: bash
+      - name: Login to Tembo Quay
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ secrets.QUAY_REPOSITORY }}
+          username: ${{ secrets.QUAY_USER_TEMBO }}
+          password: ${{ secrets.QUAY_PASSWORD_TEMBO }}
+      - name: Push to Quay
+        shell: bash
+        run: |
+          set -xe
+          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
+          for tag in "${TAG_ARRAY[@]}"; do
+          docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
+            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag 
+          done
+      - name: Configure AWS credentials for ECR
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.GHA_IAM_ROLE }}
+          role-session-name: images-gha-docker-build-and-push
+          aws-region: "us-east-1"
+      - name: Install awscli
+        uses: unfor19/install-aws-cli-action@v1
+      - name: Push to ECR
+        shell: bash
+        run: |
+          set -xe
+          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
+          for tag in "${TAG_ARRAY[@]}"; do
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}/$CONTAINER_NAME
+            docker tag $IMAGE_NAME ${{ secrets.ECR_REGISTRY }}/$IMAGE_NAME-$tag
+            docker push ${{ secrets.ECR_REGISTRY }}/$IMAGE_NAME-$tag
+          done
+
+  dw-cnpg-build:
+    needs: [pre-build, standard-cnpg-build]
+    permissions:
+      id-token: write
+      contents: read
+    runs-on:
+      - self-hosted
+      - dind
+      - large-8x8
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.pre-build.outputs.build_matrix)}}
+    env:
+      CONTAINER_NAME: "dw-cnpg"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker images based on conditions
+        run: |
+          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          docker build ./$CONTAINER_NAME --build-arg PG_RELEASE=${{ matrix.pg_release }} --build-arg PG_VERSION=${{ matrix.pg_version }} --build-arg TAG=${{ needs.pre-build.outputs.short_sha }} -t $IMAGE_NAME
+        shell: bash
+      - name: Login to Tembo Quay
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ secrets.QUAY_REPOSITORY }}
+          username: ${{ secrets.QUAY_USER_TEMBO }}
+          password: ${{ secrets.QUAY_PASSWORD_TEMBO }}
+      - name: Push to Quay
+        shell: bash
+        run: |
+          set -xe
+          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
+          for tag in "${TAG_ARRAY[@]}"; do
+          docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
+            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag 
+          done
+      - name: Configure AWS credentials for ECR
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.GHA_IAM_ROLE }}
+          role-session-name: images-gha-docker-build-and-push
+          aws-region: "us-east-1"
+      - name: Install awscli
+        uses: unfor19/install-aws-cli-action@v1
+      - name: Push to ECR
+        shell: bash
+        run: |
+          set -xe
+          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
+          for tag in "${TAG_ARRAY[@]}"; do
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}/$CONTAINER_NAME
+            docker tag $IMAGE_NAME ${{ secrets.ECR_REGISTRY }}/$IMAGE_NAME-$tag
+            docker push ${{ secrets.ECR_REGISTRY }}/$IMAGE_NAME-$tag
+          done
