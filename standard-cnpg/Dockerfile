@@ -1,4 +1,5 @@
 ARG PG_VERSION=15
+ARG TAG=latest
 
 FROM rust:1.70-bookworm as builder
 
@@ -7,7 +8,7 @@ ARG TRUNK_VER=0.12.19
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL sparse 
 RUN cargo install --version $TRUNK_VER pg-trunk
 
-FROM quay.io/tembo/tembo-pg-slim:pg${PG_VERSION}
+FROM quay.io/tembo/tembo-pg-slim:pg${PG_VERSION}-${TAG}
 
 USER root
 
@@ -79,10 +80,10 @@ RUN set -xe; \
 	rm -rf /var/lib/apt/lists/*;
 
 # Install pg_stat_statements
-RUN trunk install pg_stat_statements
+RUN /usr/bin/trunk install pg_stat_statements
 
 # Install auto_explain
-RUN trunk install auto_explain
+RUN /usr/bin/trunk install auto_explain
 
 # cache pg_stat_statements and auto_explain and pg_stat_kcache to temp directory
 RUN set -eux; \
