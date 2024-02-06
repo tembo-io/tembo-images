@@ -173,6 +173,8 @@ jobs:
           done
 
   ml-cnpg-build:
+    # This job requires standard-cnpg:pg{versions}, which have't been pushed yet
+    if: false
     needs: [pre-build, standard-cnpg-build]
     permissions:
       id-token: write
@@ -230,6 +232,8 @@ jobs:
           done
 
   dw-cnpg-build:
+    # This job requires standard-cnpg:pg{versions}, which have't been pushed yet
+    if: false
     needs: [pre-build, standard-cnpg-build]
     permissions:
       id-token: write
