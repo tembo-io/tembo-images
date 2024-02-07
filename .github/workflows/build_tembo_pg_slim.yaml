@@ -198,7 +198,7 @@ jobs:
       - name: Build Docker images based on conditions
         run: |
           IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_release }}
-          docker build ./$CONTAINER_NAME --build-arg PG_RELEASE=${{ matrix.pg_release }} --build-arg PG_VERSION=${{ matrix.pg_version }} --build-arg TAG=${{ needs.pre-build.outputs.short_sha }} -t $IMAGE_NAME
+          docker build ./$CONTAINER_NAME --build-arg PG_RELEASE=${{ matrix.pg_release }} --build-arg TAG=${{ needs.pre-build.outputs.short_sha }} -t $IMAGE_NAME
         shell: bash
       - name: Login to Tembo Quay
         uses: docker/login-action@v2
@@ -255,7 +255,7 @@ jobs:
       - name: Build Docker images based on conditions
         run: |
           IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_release }}
-          docker build ./$CONTAINER_NAME --build-arg PG_RELEASE=${{ matrix.pg_release }} --build-arg PG_VERSION=${{ matrix.pg_version }} --build-arg TAG=${{ needs.pre-build.outputs.short_sha }} -t $IMAGE_NAME
+          docker build ./$CONTAINER_NAME --build-arg PG_RELEASE=${{ matrix.pg_release }} --build-arg TAG=${{ needs.pre-build.outputs.short_sha }} -t $IMAGE_NAME
         shell: bash
       - name: Login to Tembo Quay
         uses: docker/login-action@v2
