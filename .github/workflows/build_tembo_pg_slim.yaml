@@ -153,7 +153,7 @@ jobs:
         shell: bash
         run: |
           set -xe
-          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_release }}
           IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
           for tag in "${TAG_ARRAY[@]}"; do
           docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
@@ -171,7 +171,7 @@ jobs:
         shell: bash
         run: |
           set -xe
-          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_release }}
           IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
           for tag in "${TAG_ARRAY[@]}"; do
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}/$CONTAINER_NAME
