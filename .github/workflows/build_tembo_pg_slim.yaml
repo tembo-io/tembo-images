@@ -102,7 +102,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build Docker images based on conditions
         run: |
-          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
           docker build ./$CONTAINER_NAME --build-arg PG_RELEASE=${{ matrix.pg_release }} --build-arg PG_VERSION=${{ matrix.pg_version }} -t $IMAGE_NAME
         shell: bash
       - name: Login to Tembo Quay
@@ -115,7 +115,7 @@ jobs:
         shell: bash
         run: |
           set -xe
-          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
           IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
           for tag in "${TAG_ARRAY[@]}"; do
           docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
@@ -140,8 +140,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build Docker images based on conditions
         run: |
-          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
-          docker build ./$CONTAINER_NAME --build-arg PG_RELEASE=${{ matrix.pg_release }} --build-arg PG_VERSION=${{ matrix.pg_version }} --build-arg TAG=${{ needs.pre-build.outputs.short_sha }} -t $IMAGE_NAME
+          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
+          docker build ./$CONTAINER_NAME --build-arg PG_VERSION=${{ matrix.pg_version }} --build-arg PG_VERSION=${{ matrix.pg_version }} --build-arg TAG=${{ needs.pre-build.outputs.short_sha }} -t $IMAGE_NAME
         shell: bash
       - name: Login to Tembo Quay
         uses: docker/login-action@v2
@@ -153,7 +153,7 @@ jobs:
         shell: bash
         run: |
           set -xe
-          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
           IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
           for tag in "${TAG_ARRAY[@]}"; do
           docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
@@ -171,7 +171,7 @@ jobs:
         shell: bash
         run: |
           set -xe
-          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
           IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
           for tag in "${TAG_ARRAY[@]}"; do
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}/$CONTAINER_NAME
@@ -197,8 +197,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build Docker images based on conditions
         run: |
-          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
-          docker build ./$CONTAINER_NAME --build-arg PG_RELEASE=${{ matrix.pg_release }} --build-arg PG_VERSION=${{ matrix.pg_version }} --build-arg TAG=${{ needs.pre-build.outputs.short_sha }} -t $IMAGE_NAME
+          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
+          docker build ./$CONTAINER_NAME --build-arg PG_VERSION=${{ matrix.pg_version }} --build-arg TAG=${{ needs.pre-build.outputs.short_sha }} -t $IMAGE_NAME
         shell: bash
       - name: Login to Tembo Quay
         uses: docker/login-action@v2
@@ -210,7 +210,7 @@ jobs:
         shell: bash
         run: |
           set -xe
-          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
           IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
           for tag in "${TAG_ARRAY[@]}"; do
           docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
@@ -228,7 +228,7 @@ jobs:
         shell: bash
         run: |
           set -xe
-          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
           IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
           for tag in "${TAG_ARRAY[@]}"; do
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}/$CONTAINER_NAME
@@ -254,8 +254,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build Docker images based on conditions
         run: |
-          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
-          docker build ./$CONTAINER_NAME --build-arg PG_RELEASE=${{ matrix.pg_release }} --build-arg PG_VERSION=${{ matrix.pg_version }} --build-arg TAG=${{ needs.pre-build.outputs.short_sha }} -t $IMAGE_NAME
+          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
+          docker build ./$CONTAINER_NAME --build-arg PG_VERSION=${{ matrix.pg_version }} --build-arg TAG=${{ needs.pre-build.outputs.short_sha }} -t $IMAGE_NAME
         shell: bash
       - name: Login to Tembo Quay
         uses: docker/login-action@v2
@@ -267,7 +267,7 @@ jobs:
         shell: bash
         run: |
           set -xe
-          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
           IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
           for tag in "${TAG_ARRAY[@]}"; do
           docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
@@ -285,7 +285,7 @@ jobs:
         shell: bash
         run: |
           set -xe
-          IMAGE_NAME=$CONTAINER_NAME:pg${{ matrix.pg_version }}
+          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
           IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
           for tag in "${TAG_ARRAY[@]}"; do
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}/$CONTAINER_NAME

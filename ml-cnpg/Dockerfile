@@ -1,7 +1,7 @@
 ARG PG_VERSION=15
 ARG TAG=latest
 
-FROM quay.io/tembo/standard-cnpg:pg${PG_VERSION}-${TAG}
+FROM quay.io/tembo/standard-cnpg:${PG_VERSION}-${TAG}
 USER root
 
 ARG PGML_VERSION=2.7.1
