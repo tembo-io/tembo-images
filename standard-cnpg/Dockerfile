@@ -49,6 +49,7 @@ RUN set -eux; \
           libaio1 \
           wget \
           libbson-dev \
+          libgsl-dev \
       ; \
       apt-get autoremove -y; \
       apt-get clean -y; \
