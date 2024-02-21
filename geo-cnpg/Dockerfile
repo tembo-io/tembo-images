@@ -9,13 +9,15 @@ WORKDIR /
 # Install dependencies for running postgis and mobilitydb
 RUN apt-get update && \
     apt-get install -y \
+    git \
+    cmake \
     libgeos-dev \
     libproj-dev \
     libprotobuf-c-dev \
     protobuf-c-compiler \
     libgdal-dev \
     libgsl-dev \
-    libjson-c-dev
+    libjson-c-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Download and build PostGIS
@@ -27,12 +29,11 @@ RUN wget https://download.osgeo.org/postgis/source/postgis-3.4.0.tar.gz && \
     make install
 
 # Clone and build mobilitydb
-RUN git clone https://github.com/MobilityDB/MobilityDB
-ARG RELEASE=v1.1.0rc1
+#ARG RELEASE=v1.1.0rc1
 
-RUN cd MobilityDB && \
-    git fetch origin ${RELEASE} && \
-    git checkout ${RELEASE} && \
+RUN git clone https://github.com/MobilityDB/MobilityDB && \
+    cd MobilityDB && \
+    git checkout v1.1.0rc1 && \
     mkdir build && \
     cd build && \
     cmake .. && \
