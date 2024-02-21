@@ -20,7 +20,7 @@ RUN set -eux; \
       useradd -r -g postgres --uid=999 --home-dir=/var/lib/postgresql --shell=/bin/bash postgres; \
       mkdir -p /var/lib/postgresql; \
       chown -R postgres:postgres /var/lib/postgresql; \
-      apt-get update; apt-get install -y curl ca-certificates gnupg lsb-release lbzip2 bzip2
+      apt-get update; apt-get install -y curl ca-certificates gnupg lsb-release lbzip2
 
 STOPSIGNAL SIGINT
 
@@ -36,8 +36,8 @@ ENV LANG en_US.utf8
 RUN mkdir /docker-entrypoint-initdb.d
 
 # Build Postgres from source
-RUN curl https://ftp.postgresql.org/pub/source/v15.3/postgresql-15.3.tar.gz > postgresql-15.3.tar.gz
-RUN tar xfz postgresql-15.3.tar.gz
+RUN curl https://ftp.postgresql.org/pub/source/v${PG_RELEASE}/postgresql-${PG_RELEASE}.tar.bz2 -o postgresql-${PG_RELEASE}.tar.bz2
+RUN tar xf postgresql-${PG_RELEASE}.tar.bz2
 RUN set -eux; \
       apt-get update && apt-get install -y \
           libreadline-dev \
@@ -70,12 +70,12 @@ RUN set -eux; \
       apt-get autoremove -y; \
       apt-get clean -y; \
       rm -rf /var/lib/apt/lists/*
-WORKDIR postgresql-15.3
+WORKDIR postgresql-${PG_RELEASE}
 ENV CFLAGS "-g -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-omit-frame-pointer"
 ENV LDFLAGS "-Wl,-z,relro -Wl,-z,now"
-RUN ./configure --prefix=/usr/lib/postgresql/15.3 \
+RUN ./configure --prefix=/usr/lib/postgresql/${PG_VERSION} \
         --datarootdir=${ALTDIR} \
-        --libdir=${ALTDIR}/15.3/lib \
+        --libdir=${ALTDIR}/${PG_VERSION}/lib \
         --with-perl \
         --with-python \
         --with-tcl \
@@ -101,10 +101,10 @@ RUN ./configure --prefix=/usr/lib/postgresql/15.3 \
 
 RUN make -j$(nproc)
 RUN make install
-RUN cd .. && rm postgresql-15.3.tar.gz
+RUN cd .. && rm postgresql-${PG_RELEASE}.tar.bz2
 
 WORKDIR /
-RUN rm -rf /postgresql-15.3
+RUN rm -rf /postgresql-${PG_RELEASE}
 
 # Remove pre-installed pg_config
 RUN rm /usr/bin/pg_config
