@@ -44,18 +44,9 @@ RUN set -eux; \
       cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
       cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir;
 
+ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+ENV XDG_CACHE_HOME=/var/lib/postgresql/data/tembo/.cache
+
 # Revert the postgres user to id 26
 RUN usermod -u 26 postgres
 USER 26
-
-# Install Python dependencies
-ENV PATH=/var/lib/postgresql/.local/bin:$PATH
-COPY --chown=postgres:postgres requirements.txt .
-COPY --chown=postgres:postgres requirements-xformers.txt .
-RUN set -eux; \
-  pip3 install -r requirements.txt; \
-  pip3 install -r requirements-xformers.txt --no-dependencies;
-
-ENV XDG_CACHE_HOME=/var/lib/postgresql/data/tembo/.cache
-ENV VECTORIZE_SOCKET_URL=postgresql:///postgres?host=/controller/run&user=postgres&dbname=postgres
-
