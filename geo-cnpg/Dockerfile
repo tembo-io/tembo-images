@@ -29,7 +29,6 @@ RUN wget https://download.osgeo.org/postgis/source/postgis-3.4.0.tar.gz && \
     make install
 
 # Clone and build mobilitydb
-#ARG RELEASE=v1.1.0rc1
 
 RUN git clone https://github.com/MobilityDB/MobilityDB && \
     cd MobilityDB && \
