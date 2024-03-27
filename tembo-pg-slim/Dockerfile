@@ -5,7 +5,6 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG ALTDIR=/var/lib/postgresql/data/tembo
 ENV TZ=Etc/UTC
 ENV PGDATA /var/lib/postgresql/data
-ARG PG_RELEASE 15.3
 ARG PG_VERSION 15
 ENV PATH $PATH:/usr/lib/postgresql/$PG_VERSION/bin
 
@@ -20,7 +19,7 @@ RUN set -eux; \
       useradd -r -g postgres --uid=999 --home-dir=/var/lib/postgresql --shell=/bin/bash postgres; \
       mkdir -p /var/lib/postgresql; \
       chown -R postgres:postgres /var/lib/postgresql; \
-      apt-get update; apt-get install -y curl ca-certificates gnupg lsb-release lbzip2
+      apt-get update; apt-get install -y curl ca-certificates gnupg lsb-release lbzip2 git
 
 STOPSIGNAL SIGINT
 
@@ -35,9 +34,12 @@ ENV LANG en_US.utf8
 
 RUN mkdir /docker-entrypoint-initdb.d
 
-# Build Postgres from source
-RUN curl https://ftp.postgresql.org/pub/source/v${PG_RELEASE}/postgresql-${PG_RELEASE}.tar.bz2 -o postgresql-${PG_RELEASE}.tar.bz2
-RUN tar xf postgresql-${PG_RELEASE}.tar.bz2
+RUN git clone https://github.com/postgres/postgres.git && \
+    cd postgres && \
+    PG_RELEASE=$(git tag | grep '^REL_'${PG_VERSION}'_' | grep -vE 'RC|BETA' | sort -V | tail -1 | sed 's/REL_//') && \
+    echo $PG_RELEASE && \
+    git checkout REL_$PG_RELEASE
+
 RUN set -eux; \
       apt-get update && apt-get install -y \
           libreadline-dev \
@@ -65,12 +67,15 @@ RUN set -eux; \
           libsystemd-dev \
           libselinux1-dev \
           libzstd-dev \
-	  vim \
-      ; \
+	    vim \
+          flex \
+          bison; \
       apt-get autoremove -y; \
       apt-get clean -y; \
       rm -rf /var/lib/apt/lists/*
-WORKDIR postgresql-${PG_RELEASE}
+
+WORKDIR postgres
+
 ENV CFLAGS "-g -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-omit-frame-pointer"
 ENV LDFLAGS "-Wl,-z,relro -Wl,-z,now"
 RUN ./configure --prefix=/usr/lib/postgresql/${PG_VERSION} \
@@ -101,10 +106,9 @@ RUN ./configure --prefix=/usr/lib/postgresql/${PG_VERSION} \
 
 RUN make -j$(nproc)
 RUN make install
-RUN cd .. && rm postgresql-${PG_RELEASE}.tar.bz2
 
 WORKDIR /
-RUN rm -rf /postgresql-${PG_RELEASE}
+RUN rm -rf /postgres
 
 # Remove pre-installed pg_config
 RUN rm /usr/bin/pg_config
