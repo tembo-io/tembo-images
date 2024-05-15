@@ -92,7 +92,7 @@ RUN git clone https://github.com/aws/aws-sdk-cpp.git && \
     cmake -DBUILD_ONLY="s3;core;config;sts;cognito-identity;transfer;identity-management" -DAUTORUN_UNIT_TESTS=OFF -DCMAKE_CXX_FLAGS=-Wno-error=deprecated-declarations .. && \ 
     make -j$(nproc) && \
     make install && \
-    cd ../../ && rm -rf aws-sdk-cpp
+    cd ../../../ && rm -rf aws-sdk-cpp
 
 # Install auto_explain
 RUN /usr/bin/trunk install auto_explain
@@ -106,7 +106,7 @@ RUN git clone https://github.com/apache/arrow.git && \
     cmake -DARROW_PARQUET=ON -DARROW_S3=ON -DARROW_WITH_SNAPPY=ON .. && \
     make -j$(nproc) && \
     make install && \
-    cd ../../ && rm -rf arrow
+    cd ../../../ && rm -rf arrow
 
 # cache pg_stat_statements and auto_explain and pg_stat_kcache to temp directory
 RUN set -eux; \
@@ -117,7 +117,6 @@ RUN set -eux; \
 
 # cache all extensions
 ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-ENV XDG_CACHE_HOME=/var/lib/postgresql/data/tembo/.cache
 
 # Revert the postgres user to id 26
 RUN usermod -u 26 postgres
