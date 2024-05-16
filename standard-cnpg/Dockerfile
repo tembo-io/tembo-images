@@ -49,6 +49,7 @@ RUN set -eux; \
           libaio1 \
           wget \
           libbson-dev \
+          cmake \
       ; \
       apt-get autoremove -y; \
       apt-get clean -y; \
@@ -82,8 +83,30 @@ RUN set -xe; \
 # Install pg_stat_statements
 RUN /usr/bin/trunk install pg_stat_statements
 
+# Clone and build AWS SDK for C++
+RUN git clone https://github.com/aws/aws-sdk-cpp.git && \
+    cd aws-sdk-cpp && \
+    git checkout 1.9.263 && \
+    git submodule update --init --recursive && \
+    mkdir build && cd build && \
+    cmake -DBUILD_ONLY="s3;core;config;sts;cognito-identity;transfer;identity-management" -DAUTORUN_UNIT_TESTS=OFF -DCMAKE_CXX_FLAGS=-Wno-error=deprecated-declarations .. && \ 
+    make -j$(nproc) && \
+    make install && \
+    cd ../../../ && rm -rf aws-sdk-cpp
+
 # Install auto_explain
 RUN /usr/bin/trunk install auto_explain
+
+# Clone and build Apache Arrow
+RUN git clone https://github.com/apache/arrow.git && \
+    cd arrow && \
+    git checkout apache-arrow-7.0.1 && \
+    cd cpp && \
+    mkdir build && cd build && \
+    cmake -DARROW_PARQUET=ON -DARROW_S3=ON -DARROW_WITH_SNAPPY=ON .. && \
+    make -j$(nproc) && \
+    make install && \
+    cd ../../../ && rm -rf arrow
 
 # cache pg_stat_statements and auto_explain and pg_stat_kcache to temp directory
 RUN set -eux; \
@@ -91,6 +114,9 @@ RUN set -eux; \
 	    mkdir /tmp/pg_sharedir; \
       cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
       cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir
+
+# cache all extensions
+ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
 # Revert the postgres user to id 26
 RUN usermod -u 26 postgres
