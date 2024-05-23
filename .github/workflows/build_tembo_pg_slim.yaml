@@ -19,6 +19,7 @@ on:
       - 'dw-cnpg/**'
       - 'ml-cnpg/**'
       - 'geo-cnpg/**'
+      - '.github/**'
 
 
 jobs:
