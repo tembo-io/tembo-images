@@ -401,22 +401,3 @@ jobs:
           docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
             docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag 
           done
-      - name: Configure AWS credentials for ECR
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.GHA_IAM_ROLE }}
-          role-session-name: images-gha-docker-build-and-push
-          aws-region: "us-east-1"
-      - name: Install awscli
-        uses: unfor19/install-aws-cli-action@v1
-      - name: Push to ECR
-        shell: bash
-        run: |
-          set -xe
-          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
-          IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
-          for tag in "${TAG_ARRAY[@]}"; do
-            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}/$CONTAINER_NAME
-            docker tag $IMAGE_NAME ${{ secrets.ECR_REGISTRY }}/$IMAGE_NAME-$tag
-            docker push ${{ secrets.ECR_REGISTRY }}/$IMAGE_NAME-$tag
-          done
