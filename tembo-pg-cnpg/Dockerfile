@@ -1,6 +1,6 @@
 ARG PG_VERSION=15
 
-FROM rust:1.70-bookworm as builder
+FROM rust:1.78-bookworm as builder
 
 ARG TRUNK_VER=0.12.25
 ARG TAG=latest
