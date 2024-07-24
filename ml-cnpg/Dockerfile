@@ -1,12 +1,8 @@
-ARG PG_VERSION=15
+ARG PG_VERSION=16
 ARG TAG=latest
 
 FROM quay.io/tembo/standard-cnpg:${PG_VERSION}-${TAG}
 USER root
-
-ARG PGML_VERSION=2.7.1
-ARG PGVECTOR_VERSION=0.4.4
-ARG PGEMBEDDING_VERSION=0.1.0
 
 WORKDIR /
 
@@ -29,17 +25,17 @@ RUN set -eux; \
       cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
       cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir;
 
+RUN echo "deb [trusted=yes] https://apt.postgresml.org $(lsb_release -cs) main" > /etc/apt/sources.list.d/postgresml.list
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list
+RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | tee /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg >/dev/null      
+ENV TZ=UTC
+ENV DEBIAN_FRONTEND=noninteractive
+ARG PG_VERSION=16
+RUN apt update -y && apt install git postgresml-${PG_VERSION}
+
 # Revert the postgres user to id 26
 RUN usermod -u 26 postgres
 USER 26
-
-# Install Python dependencies
-ENV PATH=/var/lib/postgresql/.local/bin:$PATH
-COPY --chown=postgres:postgres requirements.txt .
-COPY --chown=postgres:postgres requirements-xformers.txt .
-RUN set -eux; \
-  pip3 install -r requirements.txt; \
-  pip3 install -r requirements-xformers.txt --no-dependencies;
 
 ENV XDG_CACHE_HOME=/var/lib/postgresql/data/tembo/.cache
 ENV VECTORIZE_SOCKET_URL=postgresql:///postgres?host=/controller/run&user=postgres&dbname=postgres
