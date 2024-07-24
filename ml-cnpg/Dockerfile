@@ -31,7 +31,7 @@ RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | te
 ENV TZ=UTC
 ENV DEBIAN_FRONTEND=noninteractive
 ARG PG_VERSION=16
-RUN apt update -y && apt install git postgresml-${PG_VERSION}
+RUN apt-get update -y && apt-get install -y git postgresml-${PG_VERSION}
 
 # Revert the postgres user to id 26
 RUN usermod -u 26 postgres
