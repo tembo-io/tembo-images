@@ -35,9 +35,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Clone and build parquet_s3_fdw
-RUN git clone https://github.com/pgspider/parquet_s3_fdw.git && \
+RUN git clone https://github.com/tembo/parquet_s3_fdw.git && \
     cd parquet_s3_fdw && \
-    git checkout v1.1.0 && \
+    git checkout v1.0.0 && \
     make USE_PGXS=1 install && \
     cd .. && rm -rf parquet_s3_fdw
 
