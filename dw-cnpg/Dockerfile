@@ -1,5 +1,5 @@
 ARG PG_VERSION=15
-ARG TAG=latest
+ARG TAG=4252623
 
 FROM quay.io/tembo/standard-cnpg:${PG_VERSION}-${TAG}
 USER root
@@ -37,7 +37,6 @@ RUN apt-get update && apt-get install -y \
 # Clone and build parquet_s3_fdw
 RUN git clone https://github.com/tembo-io/parquet_s3_fdw.git && \
     cd parquet_s3_fdw && \
-    git checkout v1.0.0 && \
     make USE_PGXS=1 install && \
     cd .. && rm -rf parquet_s3_fdw
 
