@@ -40,6 +40,7 @@ RUN git clone https://github.com/tembo-io/parquet_s3_fdw.git && \
     make USE_PGXS=1 install && \
     cd .. && rm -rf parquet_s3_fdw
 
+
 # cache all extensions
 RUN set -eux; \
       cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
