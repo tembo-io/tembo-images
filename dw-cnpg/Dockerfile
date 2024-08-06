@@ -6,6 +6,7 @@ USER root
 
 WORKDIR /
 
+
 # Install build dependencies for parquet_s3_fdw and its dependent libraries
 RUN apt-get update && apt-get install -y \
     automake \
