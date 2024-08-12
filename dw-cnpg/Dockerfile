@@ -1,5 +1,5 @@
 ARG PG_VERSION=15
-ARG TAG=4252623
+ARG TAG=latest
 
 FROM quay.io/tembo/standard-cnpg:${PG_VERSION}-${TAG}
 USER root
