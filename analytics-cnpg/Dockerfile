@@ -1,5 +1,5 @@
 ARG PG_VERSION=16
-ARG TAG=latest
+ARG TAG=c19d507
 
 FROM quay.io/tembo/standard-cnpg:${PG_VERSION}-${TAG}
 USER root
@@ -20,7 +20,7 @@ RUN git clone https://github.com/duckdb/duckdb && \
     cd duckdb && \
     GEN=ninja make
 
-RUN git clone https://github.com/duckdb/pg_duckdb.git \
+RUN git clone https://github.com/duckdb/pg_duckdb.git && \
     cd pg_duckdb && \
     make install
 
