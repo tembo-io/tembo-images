@@ -71,7 +71,7 @@ jobs:
         run: |
           SHORT_SHA="${{ steps.versions.outputs.SHORT_SHA }}"
           TAGS=''
-          if [ "${{ steps.tags_list.outputs.tag_cargo }}" == "true" ]; then
+          if [ "${{ steps.tags_list.outputs.tag_cargo }}" == "true" ] && test -f "Cargo.toml"; then
               echo "Cargo file detected, adding to tags"
               VERSION=$(stoml Cargo.toml package.version)-${SHORT_SHA}
               TAGS="$TAGS $VERSION"
