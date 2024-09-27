@@ -42,7 +42,7 @@ jobs:
       - name: Append PostgreSQL configurations to matrix
         id: append_pg_configs
         run: |
-          PG_CONFIGS='[{"pg_version": "14"}, {"pg_version": "15"}, {"pg_version": "16"}]'
+          PG_CONFIGS='[{"pg_version": "14"}, {"pg_version": "15"}, {"pg_version": "16"}, {"pg_version": "17"}]'
           MODIFIED_MATRIX=$(echo $PG_CONFIGS | jq -c '{include: .}')
           echo "build_matrix=$MODIFIED_MATRIX" >> $GITHUB_OUTPUT
       - name: Determine which tags to publish
