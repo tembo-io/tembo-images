@@ -1,6 +1,6 @@
 # Postgres Docker Image for Tembo's Standard Stack
 
-Contains a Dockerfile with trunk, barman-cloud, Postgres 14, 15 or 16 and all extension dependencies installed.
+Contains a Dockerfile with trunk, barman-cloud, Postgres 14, 15, 16, or 17 and all extension dependencies installed.
 
 ## Versioning
 
