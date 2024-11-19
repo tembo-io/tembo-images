@@ -123,7 +123,7 @@ jobs:
           IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
           for tag in "${TAG_ARRAY[@]}"; do
           docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
-            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag 
+            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
           done
 
   standard-cnpg-build:
@@ -161,7 +161,7 @@ jobs:
           IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
           for tag in "${TAG_ARRAY[@]}"; do
           docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
-            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag 
+            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
           done
       - name: Configure AWS credentials for ECR
         uses: aws-actions/configure-aws-credentials@v4
@@ -226,7 +226,7 @@ jobs:
           IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
           for tag in "${TAG_ARRAY[@]}"; do
           docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
-            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag 
+            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
           done
       - name: Configure AWS credentials for ECR
         uses: aws-actions/configure-aws-credentials@v4
@@ -287,7 +287,7 @@ jobs:
           IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
           for tag in "${TAG_ARRAY[@]}"; do
           docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
-            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag 
+            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
           done
       - name: Configure AWS credentials for ECR
         uses: aws-actions/configure-aws-credentials@v4
@@ -344,7 +344,7 @@ jobs:
           IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
           for tag in "${TAG_ARRAY[@]}"; do
           docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
-            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag 
+            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
           done
       - name: Configure AWS credentials for ECR
         uses: aws-actions/configure-aws-credentials@v4
@@ -409,7 +409,7 @@ jobs:
           IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
           for tag in "${TAG_ARRAY[@]}"; do
           docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
-            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag 
+            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
           done
       - name: Configure AWS credentials for ECR
         uses: aws-actions/configure-aws-credentials@v4
@@ -470,5 +470,5 @@ jobs:
           IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
           for tag in "${TAG_ARRAY[@]}"; do
           docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
-            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag 
+            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
           done
