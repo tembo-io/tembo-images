@@ -269,17 +269,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build Docker images based on conditions
+        if: ${{ matrix.pg_version != '17' }}
         run: |
           IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
           docker build ./$CONTAINER_NAME --build-arg PG_VERSION=${{ matrix.pg_version }} --build-arg TAG=${{ needs.pre-build.outputs.short_sha }} -t $IMAGE_NAME
         shell: bash
       - name: Login to Tembo Quay
+        if: ${{ matrix.pg_version != '17' }}
         uses: docker/login-action@v2
         with:
           registry: ${{ secrets.QUAY_REPOSITORY }}
           username: ${{ secrets.QUAY_USER_TEMBO }}
           password: ${{ secrets.QUAY_PASSWORD_TEMBO }}
       - name: Push to Quay
+        if: ${{ matrix.pg_version != '17' }}
         shell: bash
         run: |
           set -xe
@@ -290,15 +293,18 @@ jobs:
             docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
           done
       - name: Configure AWS credentials for ECR
+        if: ${{ matrix.pg_version != '17' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.GHA_IAM_ROLE }}
           role-session-name: images-gha-docker-build-and-push
           aws-region: "us-east-1"
       - name: Install awscli
+        if: ${{ matrix.pg_version != '17' }}
         uses: unfor19/install-aws-cli-action@v1
       - name: Push to ECR
         shell: bash
+        if: ${{ matrix.pg_version != '17' }}
         run: |
           set -xe
           IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
