@@ -3,9 +3,9 @@ ARG TAG=latest
 
 FROM rust:1.78-bookworm as builder
 
-ARG TRUNK_VER=0.12.25
+ARG TRUNK_VER=0.15.0
 
-ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL sparse 
+ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL sparse
 RUN cargo install --version $TRUNK_VER pg-trunk
 
 FROM quay.io/tembo/tembo-pg-slim:${PG_VERSION}-${TAG}

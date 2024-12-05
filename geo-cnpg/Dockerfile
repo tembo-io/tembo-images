@@ -32,7 +32,7 @@ RUN wget https://download.osgeo.org/postgis/source/postgis-3.4.0.tar.gz && \
 
 RUN git clone https://github.com/MobilityDB/MobilityDB && \
     cd MobilityDB && \
-    git checkout v1.1.0rc1 && \
+    git checkout v1.2.0rc1 && \
     mkdir build && \
     cd build && \
     cmake .. && \
