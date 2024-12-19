@@ -107,11 +107,17 @@ RUN ./configure --prefix=/usr/lib/postgresql/${PG_VERSION} \
 RUN make -j$(nproc)
 RUN make install
 
+# Remove libpq-dev provided from Ubuntu repos and set the newly-compiled one to system path
+RUN set -eux; \
+    apt-get purge -y libpq-dev && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN echo "${ALTDIR}/${PG_VERSION}/lib" > /etc/ld.so.conf.d/postgres.conf && \
+    ldconfig
+
 WORKDIR /
 RUN rm -rf /postgres
-
-# Remove pre-installed pg_config
-RUN rm /usr/bin/pg_config
 
 RUN mkdir -p /var/run/postgresql && chmod 775 /var/run/postgresql
 RUN mkdir -p /usr/share/postgresql/${PG_MAJOR}/extension && chmod 775 /usr/share/postgresql/${PG_MAJOR}/extension
