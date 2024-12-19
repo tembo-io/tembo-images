@@ -15,10 +15,17 @@ RUN apt-get update && \
     libproj-dev \
     libprotobuf-c-dev \
     protobuf-c-compiler \
-    libgdal-dev \
     libgsl-dev \
     libjson-c-dev \
     && rm -rf /var/lib/apt/lists/*
+
+RUN wget https://github.com/OSGeo/gdal/releases/download/v3.6.0/gdal-3.6.0.tar.gz && \
+    tar xvf gdal-3.6.0.tar.gz && \
+    cd gdal-3.6.0 && \
+    mkdir build && cd build && \
+    cmake .. && \
+    cmake --build . && \
+    cmake --build . --target install
 
 # Download and build PostGIS
 RUN wget https://download.osgeo.org/postgis/source/postgis-3.4.0.tar.gz && \
@@ -29,7 +36,6 @@ RUN wget https://download.osgeo.org/postgis/source/postgis-3.4.0.tar.gz && \
     make install
 
 # Clone and build mobilitydb
-
 RUN git clone https://github.com/MobilityDB/MobilityDB && \
     cd MobilityDB && \
     git checkout v1.2.0rc1 && \

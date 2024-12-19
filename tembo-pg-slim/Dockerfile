@@ -1,5 +1,5 @@
 # vim:set ft=dockerfile:
-FROM quay.io/tembo/ubuntu:24.04
+FROM quay.io/coredb/ubuntu:22.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG ALTDIR=/var/lib/postgresql/data/tembo
