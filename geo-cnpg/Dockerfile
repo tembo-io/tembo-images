@@ -17,33 +17,33 @@ RUN apt-get update && \
     protobuf-c-compiler \
     libgsl-dev \
     libjson-c-dev \
+    ninja-build \
     && rm -rf /var/lib/apt/lists/*
 
-RUN wget https://github.com/OSGeo/gdal/releases/download/v3.6.0/gdal-3.6.0.tar.gz && \
-    tar xvf gdal-3.6.0.tar.gz && \
-    cd gdal-3.6.0 && \
-    mkdir build && cd build && \
-    cmake .. && \
-    cmake --build . && \
-    cmake --build . --target install
+ARG ARROW_VERSION=19.0.0
+RUN wget "https://github.com/apache/arrow/releases/download/apache-arrow-${ARROW_VERSION}/apache-arrow-${ARROW_VERSION}.tar.gz" \
+    && tar zxf "apache-arrow-${ARROW_VERSION}.tar.gz" \
+    && cd "apache-arrow-${ARROW_VERSION}/cpp" \
+    && cmake -S . -B build -DARROW_PARQUET=ON -DARROW_S3=ON -DARROW_WITH_SNAPPY=ON \
+    && cmake --build build  \
+    && cmake --install build \
+    && cd ../.. && rm -rf "apache-arrow-${ARROW_VERSION}*"
 
-# Download and build PostGIS
-RUN wget https://download.osgeo.org/postgis/source/postgis-3.4.0.tar.gz && \
-    tar xvf postgis-3.4.0.tar.gz && \
-    cd postgis-3.4.0 && \
-    ./configure && \
-    make && \
-    make install
+# Download and install GDAL.
+ARG GDAL_VERSION=3.10.1
+RUN wget https://github.com/OSGeo/gdal/releases/download/v${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.gz \
+    && tar xvf "gdal-${GDAL_VERSION}.tar.gz" \
+    && cmake -S "gdal-${GDAL_VERSION}" -B "gdal-${GDAL_VERSION}/build" \
+    && cmake --build "gdal-${GDAL_VERSION}/build" \
+    && cmake --build "gdal-${GDAL_VERSION}/build" --target install \
+    && rm -rf "gdal-${GDAL_VERSION}*"
 
-# Clone and build mobilitydb
-RUN git clone https://github.com/MobilityDB/MobilityDB && \
-    cd MobilityDB && \
-    git checkout v1.2.0rc1 && \
-    mkdir build && \
-    cd build && \
-    cmake .. && \
-    make && \
-    make install
+# Install PostGIS and clone and build MobilityDB
+RUN /usr/bin/trunk install postgis --version 3.5.0 \
+    && git clone --depth 1 --branch v1.2.0 https://github.com/MobilityDB/MobilityDB \
+    && cmake -S MobilityDB -B MobilityDB/build \
+    && make -C MobilityDB/build -j8 install \
+    && rm -rf MobilityDB
 
 # cache all extensions
 RUN set -eux; \
