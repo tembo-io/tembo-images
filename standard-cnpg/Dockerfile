@@ -32,7 +32,6 @@ RUN set -eux; \
           r-base-core \
           openssl \
           libpcre2-8-0 \
-          libgroonga0 \
           libopenblas0-pthread \
           libcurl4 \
           libsodium23 \
@@ -107,6 +106,15 @@ RUN git clone https://github.com/apache/arrow.git && \
     make -j$(nproc) && \
     make install && \
     cd ../.. && rm -rf arrow
+
+# Install groonga libs
+RUN wget https://packages.groonga.org/source/groonga/groonga-14.1.2.tar.gz \
+    && tar xvzf groonga-14.1.2.tar.gz \
+    && cd groonga-14.1.2 \
+    && ./configure \
+    && make -j$(nproc) \
+    && make install \
+    && cd .. && rm -rf groonga-*
 
 # cache pg_stat_statements and auto_explain and pg_stat_kcache to temp directory
 RUN set -eux; \
