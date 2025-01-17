@@ -4,16 +4,11 @@ ARG TAG=latest
 FROM quay.io/tembo/standard-cnpg:${PG_VERSION}-${TAG}
 USER root
 
-ARG PGML_VERSION=2.7.1
-ARG PGVECTOR_VERSION=0.4.4
-ARG PGEMBEDDING_VERSION=0.1.0
-
 WORKDIR /
 
 # Install dependencies for running pgml
 RUN  apt-get update \
-  && apt-get install -y \
-      libopenblas-base \
+  && apt-get install -y libopenblas-base \
   && apt-get autoremove -y \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*

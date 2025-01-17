@@ -1,1 +1,1 @@
-xformers==0.0.20
+xformers==0.0.29.post1; sys_platform == 'linux' # only runs on nvidia hardware
