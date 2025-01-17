@@ -79,9 +79,6 @@ RUN set -xe; \
   apt-get clean; \
 	rm -rf /var/lib/apt/lists/*;
 
-# Install pg_stat_statements
-RUN /usr/bin/trunk install pg_stat_statements
-
 # Clone and build AWS SDK for C++
 RUN git clone https://github.com/aws/aws-sdk-cpp.git && \
     cd aws-sdk-cpp && \
@@ -93,8 +90,17 @@ RUN git clone https://github.com/aws/aws-sdk-cpp.git && \
     make install && \
     cd ../.. && rm -rf aws-sdk-cpp
 
-# Install auto_explain
-RUN /usr/bin/trunk install auto_explain
+# Install auto_explain and pg_stat_statements.
+RUN /usr/bin/trunk install auto_explain \
+    && /usr/bin/trunk install pg_stat_statements
+
+# Install the DuckDB library.
+ARG DUCKDB_VERSION=1.1.3
+# Funky naming expectations: https://github.com/alitrack/duckdb_fdw/issues/64
+RUN curl -LO https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_VERSION}/libduckdb-linux-amd64.zip \
+    && unzip -d . libduckdb-linux-amd64.zip \
+    && install -m 755 libduckdb.so "/usr/local/lib/libduckdb.${DUCKDB_VERSION}.so" \
+    && (cd /usr/local/lib && ln -s "libduckdb.${DUCKDB_VERSION}.so" "libduckdb.so")
 
 # Clone and build Apache Arrow
 RUN git clone https://github.com/apache/arrow.git && \
