@@ -1,11 +1,10 @@
 ARG PG_VERSION=15
 ARG TAG=latest
 
-FROM rust:1.83-bookworm as builder
-
-ARG TRUNK_VER=0.15.7
-
-ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL sparse
+# Build trunk.
+FROM rust:1.83-bookworm AS builder
+ARG TRUNK_VER=0.15.10
+ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 RUN cargo install --version $TRUNK_VER pg-trunk
 
 FROM quay.io/tembo/tembo-pg-slim:${PG_VERSION}-${TAG}
@@ -79,6 +78,7 @@ RUN set -xe; \
   apt-get clean; \
 	rm -rf /var/lib/apt/lists/*;
 
+# TODO: Move next three sections to separate FROMs and just copy files here.
 # Clone and build AWS SDK for C++
 RUN git clone https://github.com/aws/aws-sdk-cpp.git && \
     cd aws-sdk-cpp && \
@@ -89,18 +89,6 @@ RUN git clone https://github.com/aws/aws-sdk-cpp.git && \
     make -j$(nproc) && \
     make install && \
     cd ../.. && rm -rf aws-sdk-cpp
-
-# Install auto_explain and pg_stat_statements.
-RUN /usr/bin/trunk install auto_explain \
-    && /usr/bin/trunk install pg_stat_statements
-
-# Install the DuckDB library.
-ARG DUCKDB_VERSION=1.1.3
-# Funky naming expectations: https://github.com/alitrack/duckdb_fdw/issues/64
-RUN curl -LO https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_VERSION}/libduckdb-linux-amd64.zip \
-    && unzip -d . libduckdb-linux-amd64.zip \
-    && install -m 755 libduckdb.so "/usr/local/lib/libduckdb.${DUCKDB_VERSION}.so" \
-    && (cd /usr/local/lib && ln -s "libduckdb.${DUCKDB_VERSION}.so" "libduckdb.so")
 
 # Clone and build Apache Arrow
 RUN git clone https://github.com/apache/arrow.git && \
@@ -122,15 +110,23 @@ RUN wget https://packages.groonga.org/source/groonga/groonga-14.1.2.tar.gz \
     && make install \
     && cd .. && rm -rf groonga-*
 
-# cache pg_stat_statements and auto_explain and pg_stat_kcache to temp directory
+ARG PG_VERSION
+ARG PG_DUCKDB_VERSION=0.2.0
+ARG DUCKDB_VERSION=1.1.3
 RUN set -eux; \
-	    mkdir /tmp/pg_pkglibdir; \
-	    mkdir /tmp/pg_sharedir; \
-      cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
-      cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir
-
-# cache all extensions
-ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+    # Grab libduckdb from the pg_duckdb trunk package
+    curl -LO https://cdb-plat-use1-prod-pgtrunkio.s3.amazonaws.com/extensions/pg_duckdb/pg_duckdb-pg${PG_VERSION}-${PG_DUCKDB_VERSION}.tar.gz; \
+    tar zxvf pg_duckdb-pg${PG_VERSION}-${PG_DUCKDB_VERSION}.tar.gz libduckdb.so; \
+    ln -s libduckdb.so "libduckdb.${DUCKDB_VERSION}.so"; \
+    mv libduckdb*.so /usr/local/lib/; \
+    rm -rf pg_duckdb*; \
+    # Install auto_explain and pg_stat_statements.
+    /usr/bin/trunk install auto_explain; \
+    /usr/bin/trunk install pg_stat_statements; \
+    # cache pg_stat_statements and auto_explain and pg_stat_kcache to temp directory
+    mkdir /tmp/pg_pkglibdir /tmp/pg_sharedir; \
+    cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
+    cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir
 
 # Revert the postgres user to id 26
 RUN usermod -u 26 postgres
