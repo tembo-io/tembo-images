@@ -1,0 +1,39 @@
+name: 🚀 Publish Trunk
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'trunk/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'trunk/**'
+
+jobs:
+  build-and-release:
+    name: 🚀 Build and Release
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Trunk
+        run: docker build ./trunk -t trunk
+        shell: bash
+      - name: Log into Quay
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ secrets.QUAY_REPOSITORY }}
+          username: ${{ secrets.QUAY_USER_TEMBO }}
+          password: ${{ secrets.QUAY_PASSWORD_TEMBO }}
+      - name: Push to Quay
+        if: github.ref_name == 'main'
+        shell: bash
+        run: |
+          set -xe
+          TAG="$(perl -nE '/TRUNK_VER\s*=\s*(.+)/ && do { print $1; exit }' trunk/Dockerfile)"
+          docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/trunk:$TAG
+          docker push $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/trunk:$TAG
+          docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/trunk:latest
+          docker push $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/trunk:latest
