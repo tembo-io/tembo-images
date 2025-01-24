@@ -6,3 +6,4 @@ RUN cargo install --version $TRUNK_VER pg-trunk
 
 FROM scratch
 COPY --from=build /usr/local/cargo/bin/trunk .
+

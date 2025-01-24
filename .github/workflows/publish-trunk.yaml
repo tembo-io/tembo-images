@@ -33,7 +33,7 @@ jobs:
         run: |
           set -xe
           TAG="$(perl -nE '/TRUNK_VER\s*=\s*(.+)/ && do { print $1; exit }' trunk/Dockerfile)"
-          docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/trunk:$TAG
-          docker push $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/trunk:$TAG
-          docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/trunk:latest
-          docker push $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/trunk:latest
+          docker tag trunk ${{ secrets.QUAY_REPOSITORY }}/trunk:$TAG
+          docker push ${{ secrets.QUAY_REPOSITORY }}/trunk:$TAG
+          docker tag trunk ${{ secrets.QUAY_REPOSITORY }}/trunk:latest
+          docker push ${{ secrets.QUAY_REPOSITORY }}/trunk:latest
