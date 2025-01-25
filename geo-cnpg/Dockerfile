@@ -47,8 +47,9 @@ RUN /usr/bin/trunk install postgis --version 3.5.0 \
 
 # cache all extensions
 RUN set -eux; \
-      cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
-      cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir;
+    ldconfig; \
+    cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
+    cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir;
 
 ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 ENV XDG_CACHE_HOME=/var/lib/postgresql/data/tembo/.cache

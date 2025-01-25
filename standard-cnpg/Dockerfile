@@ -120,6 +120,7 @@ RUN set -eux; \
     ln -s libduckdb.so "libduckdb.${DUCKDB_VERSION}.so"; \
     mv libduckdb*.so /usr/local/lib/; \
     rm -rf pg_duckdb*; \
+    ldconfig; \
     # Install auto_explain and pg_stat_statements.
     /usr/bin/trunk install auto_explain; \
     /usr/bin/trunk install pg_stat_statements; \
