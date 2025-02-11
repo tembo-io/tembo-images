@@ -392,10 +392,6 @@ jobs:
       - name: Build Docker images based on conditions
         if: ${{ matrix.pg_version != '17' }}
         run: |
-          if [[ "${{ matrix.pg_version }}" == "14" || "${{ matrix.pg_version }}" == "15" ]]; then
-            echo "Skipping Analytics build for Postgres 14 or 15"
-            exit 0
-          fi
           IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
           docker build ./$CONTAINER_NAME --build-arg PG_VERSION=${{ matrix.pg_version }} --build-arg TAG=${{ needs.pre-build.outputs.short_sha }} -t $IMAGE_NAME
         shell: bash
@@ -431,10 +427,6 @@ jobs:
         if: ${{ matrix.pg_version != '17' }}
         shell: bash
         run: |
-          if [[ "${{ matrix.pg_version }}" == "14" || "${{ matrix.pg_version }}" == "15" ]]; then
-            echo "Skipping Analytics build for Postgres 14 or 15"
-            exit 0
-          fi
           set -xe
           IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
           IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
