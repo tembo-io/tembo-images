@@ -5,6 +5,7 @@ FROM quay.io/tembo/standard-cnpg:${PG_VERSION}-${TAG} AS build
 USER root
 WORKDIR /work
 
+
 # Install build dependencies for parquet_s3_fdw and its dependent libraries
 RUN apt-get update && apt-get install -y \
     automake \
