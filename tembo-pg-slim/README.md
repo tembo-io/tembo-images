@@ -1,6 +1,7 @@
 # Postgres Docker Base Image
 
-Contains a Dockerfile with Postgres 15.3, no extensions and no additional tools.
+Contains a Dockerfile that builds PostgreSQL from source with no extensions
+and no additional tools.
 
 ## Versioning
 

@@ -25,6 +25,7 @@ on:
 
 jobs:
   pre-build:
+    name: ✨ Pre Build
     runs-on: ubuntu-latest
     outputs:
       short_sha: ${{ steps.versions.outputs.SHORT_SHA }}
@@ -41,10 +42,11 @@ jobs:
           echo "BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_OUTPUT
       - name: Append PostgreSQL configurations to matrix
         id: append_pg_configs
+        env:
+          # Update with the latest releases.
+          TAGS: '["17_3", "16_7", "15_11", "14_16"]'
         run: |
-          PG_CONFIGS='[{"pg_version": "14"}, {"pg_version": "15"}, {"pg_version": "16"}, {"pg_version": "17"}]'
-          MODIFIED_MATRIX=$(echo $PG_CONFIGS | jq -c '{include: .}')
-          echo "build_matrix=$MODIFIED_MATRIX" >> $GITHUB_OUTPUT
+          printf "build_matrix=%s" $(jq -cn --argjson pg "$TAGS" '$pg | {include: map({pg_tag: ., pg_version: scan("^\\d+")})}') >> $GITHUB_OUTPUT
       - name: Determine which tags to publish
         id: tags_list
         run: |
@@ -89,6 +91,7 @@ jobs:
           echo "Tags: ${{ steps.tags.outputs.tags }}"
 
   tembo-pg-slim-build:
+    name: 🧱 tembo-pg-slim 🐘 ${{ matrix.pg_version }}
     needs: pre-build
     permissions:
       id-token: write
@@ -107,7 +110,7 @@ jobs:
       - name: Build Docker images based on conditions
         run: |
           IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
-          docker build ./$CONTAINER_NAME --build-arg PG_VERSION=${{ matrix.pg_version }} -t $IMAGE_NAME
+          docker build ./$CONTAINER_NAME --build-arg PG_VERSION=${{ matrix.pg_version }} --build-arg PG_TAG=REL_${{ matrix.pg_tag }} -t $IMAGE_NAME
         shell: bash
       - name: Login to Tembo Quay
         uses: docker/login-action@v2
@@ -127,6 +130,7 @@ jobs:
           done
 
   standard-cnpg-build:
+    name: 📐 standard-cnpg 🐘 ${{ matrix.pg_version }}
     needs: [pre-build, tembo-pg-slim-build]
     permissions:
       id-token: write
@@ -184,6 +188,7 @@ jobs:
           done
 
   ml-cnpg-build:
+    name: 🤖 ml-cnpg 🐘 ${{ matrix.pg_version }}
     needs: [pre-build, standard-cnpg-build]
     permissions:
       id-token: write
@@ -253,6 +258,7 @@ jobs:
           done
 
   dw-cnpg-build:
+    name: 🏢 dw-cnpg 🐘 ${{ matrix.pg_version }}
     needs: [pre-build, standard-cnpg-build]
     permissions:
       id-token: write
@@ -316,6 +322,7 @@ jobs:
           done
 
   geo-cnpg-build:
+    name: 🌍 geo-cnpg 🐘 ${{ matrix.pg_version }}
     needs: [pre-build, standard-cnpg-build]
     permissions:
       id-token: write
@@ -373,6 +380,7 @@ jobs:
           done
 
   analytics-cnpg-build:
+    name: 📊 analytics-cnpg 🐘 ${{ matrix.pg_version }}
     needs: [pre-build, standard-cnpg-build]
     permissions:
       id-token: write
@@ -437,6 +445,7 @@ jobs:
           done
 
   tembo-pg-cnpg-build:
+    name: ☁️ tembo-pg-cnpg 🐘 ${{ matrix.pg_version }}
     needs: [pre-build, tembo-pg-slim-build]
     permissions:
       id-token: write
