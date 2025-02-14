@@ -111,8 +111,8 @@ RUN wget https://packages.groonga.org/source/groonga/groonga-14.1.2.tar.gz \
     && cd .. && rm -rf groonga-*
 
 ARG PG_VERSION
-ARG PG_DUCKDB_VERSION=0.2.0
-ARG DUCKDB_VERSION=1.1.3
+ARG PG_DUCKDB_VERSION=0.3.1
+ARG DUCKDB_VERSION=1.2.0
 RUN set -eux; \
     # Grab libduckdb from the pg_duckdb trunk package
     curl -LO https://cdb-plat-use1-prod-pgtrunkio.s3.amazonaws.com/extensions/pg_duckdb/pg_duckdb-pg${PG_VERSION}-${PG_DUCKDB_VERSION}.tar.gz; \
