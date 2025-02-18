@@ -107,7 +107,11 @@ RUN set -eux; \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
-RUN echo "${ALTDIR}/${PG_VERSION}/lib" > /etc/ld.so.conf.d/postgres.conf && \
+# Configure ldd to find additional shared libraries in `${ALTDIR}/lib` and
+# Postgres versioned libraries in `pg_config --pkglibdir`.
+RUN echo "${ALTDIR}/${PG_VERSION}/lib" > /etc/ld.so.conf.d/postgres.conf; \
+    echo "${ALTDIR}/lib" > /etc/ld.so.conf.d/tembo.conf; \
+    mkdir -p "${ALTDIR}/lib"; \
     ldconfig
 
 WORKDIR /

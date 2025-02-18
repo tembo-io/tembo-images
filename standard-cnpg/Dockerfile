@@ -117,8 +117,7 @@ RUN set -eux; \
     # Grab libduckdb from the pg_duckdb trunk package
     curl -LO https://cdb-plat-use1-prod-pgtrunkio.s3.amazonaws.com/extensions/pg_duckdb/pg_duckdb-pg${PG_VERSION}-${PG_DUCKDB_VERSION}.tar.gz; \
     tar zxvf pg_duckdb-pg${PG_VERSION}-${PG_DUCKDB_VERSION}.tar.gz libduckdb.so; \
-    ln -s libduckdb.so "libduckdb.${DUCKDB_VERSION}.so"; \
-    mv libduckdb*.so /usr/local/lib/; \
+    mv libduckdb.so /usr/local/lib/libduckdb.so.${DUCKDB_VERSION}; \
     rm -rf pg_duckdb*; \
     ldconfig; \
     # Install auto_explain and pg_stat_statements.
