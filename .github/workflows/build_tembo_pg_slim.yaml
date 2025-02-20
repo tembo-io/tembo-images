@@ -12,6 +12,7 @@ on:
       - 'ml-cnpg/**'
       - 'geo-cnpg/**'
       - 'analytics-cnpg/**'
+      - .github/workflows/build_tembo_pg_slim.yaml
   pull_request:
     branches:
       - main
@@ -22,6 +23,7 @@ on:
       - 'ml-cnpg/**'
       - 'geo-cnpg/**'
       - 'analytics-cnpg/**'
+      - .github/workflows/build_tembo_pg_slim.yaml
 
 jobs:
   pre-build:
@@ -44,7 +46,7 @@ jobs:
         id: append_pg_configs
         env:
           # Update with the latest releases.
-          TAGS: '["17_3", "16_7", "15_11", "14_16"]'
+          TAGS: '["17_4", "16_8", "15_12", "14_17"]'
         run: |
           printf "build_matrix=%s" $(jq -cn --argjson pg "$TAGS" '$pg | {include: map({pg_tag: ., pg_version: scan("^\\d+")})}') >> $GITHUB_OUTPUT
       - name: Determine which tags to publish
