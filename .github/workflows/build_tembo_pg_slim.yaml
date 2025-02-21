@@ -8,10 +8,8 @@ on:
       - 'tembo-pg-slim/**'
       - 'standard-cnpg/**'
       - 'tembo-pg-cnpg/**'
-      - 'dw-cnpg/**'
       - 'ml-cnpg/**'
       - 'geo-cnpg/**'
-      - 'analytics-cnpg/**'
       - .github/workflows/build_tembo_pg_slim.yaml
   pull_request:
     branches:
@@ -19,10 +17,8 @@ on:
     paths:
       - 'tembo-pg-slim/**'
       - 'standard-cnpg/**'
-      - 'dw-cnpg/**'
       - 'ml-cnpg/**'
       - 'geo-cnpg/**'
-      - 'analytics-cnpg/**'
       - .github/workflows/build_tembo_pg_slim.yaml
 
 jobs:
@@ -259,70 +255,6 @@ jobs:
             docker push ${{ secrets.ECR_REGISTRY }}/$IMAGE_NAME-$tag
           done
 
-  dw-cnpg-build:
-    name: 🏢 dw-cnpg 🐘 ${{ matrix.pg_version }}
-    needs: [pre-build, standard-cnpg-build]
-    permissions:
-      id-token: write
-      contents: read
-    runs-on:
-      - self-hosted
-      - dind
-      - large-8x8
-    strategy:
-      fail-fast: false
-      matrix: ${{fromJson(needs.pre-build.outputs.build_matrix)}}
-    env:
-      CONTAINER_NAME: "dw-cnpg"
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build Docker images based on conditions
-        if: ${{ matrix.pg_version != '17' }}
-        run: |
-          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
-          docker build ./$CONTAINER_NAME --build-arg PG_VERSION=${{ matrix.pg_version }} --build-arg TAG=${{ needs.pre-build.outputs.short_sha }} -t $IMAGE_NAME
-        shell: bash
-      - name: Login to Tembo Quay
-        if: ${{ matrix.pg_version != '17' }}
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ secrets.QUAY_REPOSITORY }}
-          username: ${{ secrets.QUAY_USER_TEMBO }}
-          password: ${{ secrets.QUAY_PASSWORD_TEMBO }}
-      - name: Push to Quay
-        if: ${{ matrix.pg_version != '17' }}
-        shell: bash
-        run: |
-          set -xe
-          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
-          IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
-          for tag in "${TAG_ARRAY[@]}"; do
-          docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
-            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
-          done
-      - name: Configure AWS credentials for ECR
-        if: ${{ matrix.pg_version != '17' }}
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.GHA_IAM_ROLE }}
-          role-session-name: images-gha-docker-build-and-push
-          aws-region: "us-east-1"
-      - name: Install awscli
-        if: ${{ matrix.pg_version != '17' }}
-        uses: unfor19/install-aws-cli-action@v1
-      - name: Push to ECR
-        shell: bash
-        if: ${{ matrix.pg_version != '17' }}
-        run: |
-          set -xe
-          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
-          IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
-          for tag in "${TAG_ARRAY[@]}"; do
-            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}/$CONTAINER_NAME
-            docker tag $IMAGE_NAME ${{ secrets.ECR_REGISTRY }}/$IMAGE_NAME-$tag
-            docker push ${{ secrets.ECR_REGISTRY }}/$IMAGE_NAME-$tag
-          done
-
   geo-cnpg-build:
     name: 🌍 geo-cnpg 🐘 ${{ matrix.pg_version }}
     needs: [pre-build, standard-cnpg-build]
@@ -370,71 +302,6 @@ jobs:
       - name: Install awscli
         uses: unfor19/install-aws-cli-action@v1
       - name: Push to ECR
-        shell: bash
-        run: |
-          set -xe
-          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
-          IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
-          for tag in "${TAG_ARRAY[@]}"; do
-            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}/$CONTAINER_NAME
-            docker tag $IMAGE_NAME ${{ secrets.ECR_REGISTRY }}/$IMAGE_NAME-$tag
-            docker push ${{ secrets.ECR_REGISTRY }}/$IMAGE_NAME-$tag
-          done
-
-  analytics-cnpg-build:
-    name: 📊 analytics-cnpg 🐘 ${{ matrix.pg_version }}
-    needs: [pre-build, standard-cnpg-build]
-    permissions:
-      id-token: write
-      contents: read
-    runs-on:
-      - self-hosted
-      - dind
-      - large-8x8
-    strategy:
-      fail-fast: false
-      matrix: ${{fromJson(needs.pre-build.outputs.build_matrix)}}
-    env:
-      CONTAINER_NAME: "analytics-cnpg"
-    steps:
-      - uses: actions/checkout@v4
-        if: ${{ matrix.pg_version != '17' }}
-      - name: Build Docker images based on conditions
-        if: ${{ matrix.pg_version != '17' }}
-        run: |
-          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
-          docker build ./$CONTAINER_NAME --build-arg PG_VERSION=${{ matrix.pg_version }} --build-arg TAG=${{ needs.pre-build.outputs.short_sha }} -t $IMAGE_NAME
-        shell: bash
-      - name: Login to Tembo Quay
-        if: ${{ matrix.pg_version != '17' }}
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ secrets.QUAY_REPOSITORY }}
-          username: ${{ secrets.QUAY_USER_TEMBO }}
-          password: ${{ secrets.QUAY_PASSWORD_TEMBO }}
-      - name: Push to Quay
-        if: ${{ matrix.pg_version != '17' }}
-        shell: bash
-        run: |
-          set -xe
-          IMAGE_NAME=$CONTAINER_NAME:${{ matrix.pg_version }}
-          IFS=' ' read -ra TAG_ARRAY <<< "${{ needs.pre-build.outputs.tags }}"
-          for tag in "${TAG_ARRAY[@]}"; do
-          docker tag $IMAGE_NAME ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
-            docker push ${{ secrets.QUAY_REPOSITORY }}/$IMAGE_NAME-$tag
-          done
-      - name: Configure AWS credentials for ECR
-        if: ${{ matrix.pg_version != '17' }}
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.GHA_IAM_ROLE }}
-          role-session-name: images-gha-docker-build-and-push
-          aws-region: "us-east-1"
-      - name: Install awscli
-        if: ${{ matrix.pg_version != '17' }}
-        uses: unfor19/install-aws-cli-action@v1
-      - name: Push to ECR
-        if: ${{ matrix.pg_version != '17' }}
         shell: bash
         run: |
           set -xe

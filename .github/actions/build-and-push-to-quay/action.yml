@@ -161,17 +161,17 @@ runs:
           docker push ${{ inputs.registry_tembo}}/${{ inputs.image_name }}:$tag
         done
     - name: Configure AWS credentials for ECR
-      if: inputs.image_name == 'standard-cnpg' || inputs.image_name == 'ml-cnpg' || inputs.image_name == 'dw-cnpg' || inputs.image_name == 'geo-cnpg' || inputs.image_name == 'analytics-cnpg'
+      if: inputs.image_name == 'standard-cnpg' || inputs.image_name == 'ml-cnpg' || inputs.image_name == 'geo-cnpg'
       uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: ${{ inputs.gha_iam_role }}
         role-session-name: images-gha-docker-build-and-push
         aws-region: ${{ inputs.aws_region }}
     - name: Install awscli
-      if: inputs.image_name == 'standard-cnpg' || inputs.image_name == 'ml-cnpg' || inputs.image_name == 'dw-cnpg' || inputs.image_name == 'geo-cnpg' || inputs.image_name == 'analytics-cnpg'
+      if: inputs.image_name == 'standard-cnpg' || inputs.image_name == 'ml-cnpg' || inputs.image_name == 'geo-cnpg'
       uses: unfor19/install-aws-cli-action@v1
     - name: Push to ECR
-      if: inputs.image_name == 'standard-cnpg' || inputs.image_name == 'ml-cnpg' || inputs.image_name == 'dw-cnpg' || inputs.image_name == 'geo-cnpg' || inputs.image_name == 'analytics-cnpg'
+      if: inputs.image_name == 'standard-cnpg' || inputs.image_name == 'ml-cnpg' || inputs.image_name == 'geo-cnpg'
       shell: bash
       run: |
         set -xe
