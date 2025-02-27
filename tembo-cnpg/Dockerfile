@@ -81,7 +81,9 @@ RUN cd postgresql-${PG_VERSION} \
         --with-systemd \
         --with-selinux \
     && make -j$(nproc) \
-    && make install
+    && make install \
+    && make -C contrib/auto_explain install \
+    && make -C contrib/pg_stat_statements install
 
 # Create barman requirements.txt.
 ARG BARMAN_VERSION=3.13.0
@@ -144,14 +146,16 @@ RUN set -xe; \
     rm requirements.txt
 
 # Clean up cache and finish configuration.
+ENV PATH=$PATH:${PG_PREFIX}/bin
 RUN set -xe; \
+    # Remove libpq without deleting psycopg2.
+    dpkg -r --force-depends libpq5; \
     apt-get clean -y; \
-    rm -rf /var/lib/apt/lists/*; \
     # Set up en_US.UTF-8
     localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8; \
     # Set the postgres user's permissions
     groupadd -r postgres --gid=999; \
-    useradd -r -g postgres --uid=999 --home-dir=${PG_HOME_DIR} --shell=/bin/bash postgres; \
+    useradd -r -g postgres --uid=26 --home-dir=${PG_HOME_DIR} --shell=/bin/bash postgres; \
     mkdir -p ${PG_HOME_DIR}; \
     chown -R postgres:postgres ${PG_HOME_DIR}; \
     # Configure ldd to find additional shared libraries in TEMBO_LIB_DIR and
@@ -159,7 +163,12 @@ RUN set -xe; \
     echo "${PG_LIB_DIR}" > /etc/ld.so.conf.d/postgres.conf; \
     echo "${TEMBO_LIB_DIR}" > /etc/ld.so.conf.d/tembo.conf; \
     mkdir -p "${TEMBO_LIB_DIR}/lib"; \
-    ldconfig
+    rm -rf /var/lib/apt/lists/* /var/cache/* /var/log/*; \
+    ldconfig; \
+    # Stash away extensions and shared libraries to a temp directory.
+    mkdir /tmp/pg_pkglibdir /tmp/pg_sharedir; \
+    cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
+    cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir
 
 # Build the final image as a single layer.
 FROM scratch
@@ -172,5 +181,5 @@ COPY --from=install / /
 WORKDIR ${PG_HOME_DIR}
 ENV TZ=Etc/UTC, LANG=en_US.utf8, PATH=$PATH:${PG_PREFIX}/bin
 STOPSIGNAL SIGINT
-USER postgres
+USER 26
 CMD ["postgres"]
