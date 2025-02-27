@@ -109,6 +109,12 @@ ARG DATA_ROOT_DIR=${PG_HOME_DIR}/data/tembo
 ARG PG_LIB_DIR=${DATA_ROOT_DIR}/${PG_MAJOR}/lib
 ARG TEMBO_LIB_DIR=${DATA_ROOT_DIR}/lib
 
+# Create the Postgres user and set its uid to what CNPG expects.
+RUN groupadd -r postgres --gid=999 && \
+	useradd -r -g postgres --uid=26 --home-dir=/var/lib/postgresql --shell=/bin/bash postgres && \
+    mkdir -p ${PG_HOME_DIR}; \
+    chown -R postgres:postgres ${PG_HOME_DIR};
+
 # Copy the PostgreSQL files and trunk.
 COPY --from=build --parents /var/lib/./postgresql /var/lib/
 COPY --from=build --parents /usr/lib/./postgresql /usr/lib/
@@ -153,11 +159,6 @@ RUN set -xe; \
     apt-get clean -y; \
     # Set up en_US.UTF-8
     localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8; \
-    # Set the postgres user's permissions
-    groupadd -r postgres --gid=999; \
-    useradd -r -g postgres --uid=26 --home-dir=${PG_HOME_DIR} --shell=/bin/bash postgres; \
-    mkdir -p ${PG_HOME_DIR}; \
-    chown -R postgres:postgres ${PG_HOME_DIR}; \
     # Configure ldd to find additional shared libraries in TEMBO_LIB_DIR and
     # and Postgres versioned libraries in PG_LIB_DIR.
     echo "${PG_LIB_DIR}" > /etc/ld.so.conf.d/postgres.conf; \
@@ -166,8 +167,7 @@ RUN set -xe; \
     rm -rf /var/lib/apt/lists/* /var/cache/* /var/log/*; \
     ldconfig; \
     # Stash away extensions and shared libraries to a temp directory.
-    mkdir /tmp/pg_pkglibdir /tmp/pg_sharedir; \
-    cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
+    mkdir /tmp/pg_sharedir; \
     cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir
 
 # Build the final image as a single layer.
