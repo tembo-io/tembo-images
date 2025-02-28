@@ -8,10 +8,10 @@ RUN cargo install pg-trunk
 FROM quay.io/tembo/ubuntu:24.04 AS build
 ARG PG_VERSION=17.4
 ARG PG_MAJOR=${PG_VERSION%%.*}
-ARG PG_PREFIX=/usr/lib/postgresql/${PG_MAJOR}
+ARG PG_PREFIX=/usr/lib/postgresql
 ARG PG_HOME_DIR=/var/lib/postgresql
-ARG DATA_ROOT_DIR=${PG_HOME_DIR}/data/tembo
-ARG PG_LIB_DIR=${DATA_ROOT_DIR}/${PG_MAJOR}/lib
+ARG DATA_VOLUME=${PG_HOME_DIR}/data
+ARG DATA_ROOT_DIR=${DATA_VOLUME}/tembo
 
 WORKDIR /work
 
@@ -51,13 +51,19 @@ ADD https://ftp.postgresql.org/pub/source/v${PG_VERSION}/postgresql-${PG_VERSION
 
 RUN tar jxf postgresql-${PG_VERSION}.tar.bz2
 
-RUN cd postgresql-${PG_VERSION} \
-    && ./configure \
+RUN set -ex; \
+    cd postgresql-${PG_VERSION}; \
+    # Patch Makefile.global.in to set pkglibdir to live on the Tembo data volume.
+    perl -pi -e "s{^pkglibdir =.+}{pkglibdir = ${DATA_VOLUME}/\@PG_MAJORVERSION\@/lib}" src/Makefile.global.in; \
+    ./configure \
         CFLAGS="-g -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-omit-frame-pointer" \
         LDFLAGS="-Wl,-z,relro -Wl,-z,now" \
         --prefix="${PG_PREFIX}" \
         --datarootdir="${DATA_ROOT_DIR}" \
-        --libdir="${PG_LIB_DIR}" \
+        --docdir="${PG_PREFIX}/doc" \
+        --htmldir="${PG_PREFIX}/html" \
+        --localedir="${PG_PREFIX}/locale" \
+        --mandir="${PG_PREFIX}/man" \
         --with-perl \
         --with-python \
         --with-tcl \
@@ -79,11 +85,11 @@ RUN cd postgresql-${PG_VERSION} \
         --with-lz4 \
         --with-zstd \
         --with-systemd \
-        --with-selinux \
-    && make -j$(nproc) \
-    && make install \
-    && make -C contrib/auto_explain install \
-    && make -C contrib/pg_stat_statements install
+        --with-selinux; \
+    make -j$(nproc); \
+    make install; \
+    make -C contrib/auto_explain install; \
+    make -C contrib/pg_stat_statements install;
 
 # Create barman requirements.txt.
 ARG BARMAN_VERSION=3.13.0
@@ -103,11 +109,10 @@ RUN set -xe; \
 FROM quay.io/tembo/ubuntu:24.04 AS install
 ARG PG_VERSION=17.4
 ARG PG_MAJOR=${PG_VERSION%%.*}
-ARG PG_PREFIX=/usr/lib/postgresql/${PG_MAJOR}
+ARG PG_PREFIX=/usr/lib/postgresql
 ARG PG_HOME_DIR=/var/lib/postgresql
-ARG DATA_ROOT_DIR=${PG_HOME_DIR}/data/tembo
-ARG PG_LIB_DIR=${DATA_ROOT_DIR}/${PG_MAJOR}/lib
-ARG TEMBO_LIB_DIR=${DATA_ROOT_DIR}/lib
+ARG DATA_VOLUME=${PG_HOME_DIR}/data
+ARG TEMBO_LIB_DIR=${DATA_VOLUME}/lib
 
 # Create the Postgres user and set its uid to what CNPG expects.
 RUN groupadd -r postgres --gid=999 && \
@@ -161,20 +166,21 @@ RUN set -xe; \
     localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8; \
     # Configure ldd to find additional shared libraries in TEMBO_LIB_DIR and
     # and Postgres versioned libraries in PG_LIB_DIR.
-    echo "${PG_LIB_DIR}" > /etc/ld.so.conf.d/postgres.conf; \
-    echo "${TEMBO_LIB_DIR}" > /etc/ld.so.conf.d/tembo.conf; \
+    printf "%s\n%s\n" "$(pg_config --libdir)" "$(pg_config --pkglibdir)" > /etc/ld.so.conf.d/postgres.conf; \
+    printf "${TEMBO_LIB_DIR}\n" > /etc/ld.so.conf.d/tembo.conf; \
     mkdir -p "${TEMBO_LIB_DIR}/lib"; \
     rm -rf /var/lib/apt/lists/* /var/cache/* /var/log/*; \
     ldconfig; \
     # Stash away extensions and shared libraries to a temp directory.
-    mkdir /tmp/pg_sharedir; \
+    mkdir /tmp/pg_pkglibdir /tmp/pg_sharedir; \
+    cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
     cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir
 
 # Build the final image as a single layer.
 FROM scratch
 ARG PG_VERSION 17.4
 ARG PG_MAJOR=${PG_VERSION%%.*}
-ARG PG_PREFIX=/usr/lib/postgresql/${PG_MAJOR}
+ARG PG_PREFIX=/usr/lib/postgresql
 ARG PG_HOME_DIR=/var/lib/postgresql
 COPY --from=install / /
 
