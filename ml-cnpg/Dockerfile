@@ -20,9 +20,7 @@ RUN set -eux; \
   trunk install ltree_plpython3u;
 
 # cache all extensions
-RUN set -eux; \
-      cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
-      cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir;
+RUN cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir;
 
 # Revert the postgres user to id 26
 RUN usermod -u 26 postgres
