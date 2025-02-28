@@ -1,11 +1,12 @@
 # syntax=docker/dockerfile:1.7-labs
+ARG BASE
 # Build trunk.
 FROM rust:1.83-bookworm AS trunk
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 RUN cargo install pg-trunk
 
 # Build PostgreSQL.
-FROM quay.io/tembo/ubuntu:24.04 AS build
+FROM ${BASE} AS build
 ARG PG_VERSION=17.4
 ARG PG_MAJOR=${PG_VERSION%%.*}
 ARG PG_PREFIX=/usr/lib/postgresql
@@ -16,6 +17,7 @@ ARG DATA_ROOT_DIR=${DATA_VOLUME}/tembo
 WORKDIR /work
 
 # Upgrade to the latest packages and install dependencies.
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     locales \
     libreadline-dev \
@@ -91,22 +93,8 @@ RUN set -ex; \
     make -C contrib/auto_explain install; \
     make -C contrib/pg_stat_statements install;
 
-# Create barman requirements.txt.
-ARG BARMAN_VERSION=3.13.0
-ENV PATH=$PATH:${PG_PREFIX}/bin
-WORKDIR /barman
-RUN set -xe; \
-    pip3 install --break-system-packages --upgrade pip-tools; \
-    # If there's a new version we need to recreate the requirements files
-    printf "barman[cloud,azure,snappy,google] == ${BARMAN_VERSION}\nboto3 == 1.35.99\n" > requirements.in; \
-    # This will take the requirements.in file and generate a file
-    # requirements.txt with the hashes for the required packages
-    pip-compile --generate-hashes; \
-    # Removes psycopg from the list of packages to install
-    sed -i '/psycopg/{:a;N;/barman/!ba};/via barman/d' requirements.txt;
-
 # Build the base image.
-FROM quay.io/tembo/ubuntu:24.04 AS install
+FROM ${BASE} AS install
 ARG PG_VERSION=17.4
 ARG PG_MAJOR=${PG_VERSION%%.*}
 ARG PG_PREFIX=/usr/lib/postgresql
@@ -126,6 +114,8 @@ COPY --from=build --parents /usr/lib/./postgresql /usr/lib/
 COPY --from=trunk /usr/local/cargo/bin/trunk /usr/local/bin/trunk
 
 # Upgrade to the latest packages and install dependencies.
+ARG PACKAGES
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get upgrade -y && apt-get install --no-install-recommends -y \
     locales \
     locales-all \
@@ -134,27 +124,17 @@ RUN apt-get update && apt-get upgrade -y && apt-get install --no-install-recomme
     tzdata \
     libssl3 \
     libgssapi-krb5-2 \
-    libicu74 \
-    libllvm19 \
     libxml2 \
     libxslt1.1 \
     libreadline8 \
-    libpython3.12 \
     libtcl8.6 \
-    libperl5.38 \
     xz-utils \
     libgss3 \
     libkrb5-3 \
     python3-pip \
     python3-psycopg2 \
-    python3-setuptools
-
-# Install barman-cloud
-COPY --from=build /barman/requirements.txt .
-RUN set -xe; \
-	# TODO: Remove --no-deps once https://github.com/pypa/pip/issues/9644 is solved
-	pip3 install --break-system-packages --no-deps -r requirements.txt; \
-    rm requirements.txt
+    python3-setuptools \
+    ${PACKAGES}
 
 # Clean up cache and finish configuration.
 ENV PATH=$PATH:${PG_PREFIX}/bin
@@ -177,7 +157,7 @@ RUN set -xe; \
     cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir
 
 # Build the final image as a single layer.
-FROM scratch
+FROM scratch AS postgres
 ARG PG_VERSION 17.4
 ARG PG_MAJOR=${PG_VERSION%%.*}
 ARG PG_PREFIX=/usr/lib/postgresql
@@ -185,7 +165,7 @@ ARG PG_HOME_DIR=/var/lib/postgresql
 COPY --from=install / /
 
 WORKDIR ${PG_HOME_DIR}
-ENV TZ=Etc/UTC, LANG=en_US.utf8, PATH=$PATH:${PG_PREFIX}/bin
+ENV TZ=Etc/UTC LANG=en_US.utf8 PATH=${PG_PREFIX}/bin:$PATH
 STOPSIGNAL SIGINT
 USER 26
 CMD ["postgres"]
