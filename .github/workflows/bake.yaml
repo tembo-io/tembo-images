@@ -1,0 +1,42 @@
+name: 🍞 Bake Postgres Images
+
+on:
+  push:
+  # schedule:
+  #   - cron: 0 8 * * 1
+
+jobs:
+  # Start by building images for testing. We want to run security checks before pushing those to production.
+  bake:
+    name: 🐳 Build for ${{ matrix.arch }}
+    # https://docs.github.com/en/actions/writing-workflows/choosing-where-your-workflow-runs/choosing-the-runner-for-a-job#standard-github-hosted-runners-for-public-repositories
+    runs-on: ubuntu-${{ matrix.arch == 'arm64' && '24.04-arm' || 'latest' }}
+    strategy:
+      matrix:
+        arch: ["arm64", "amd64"]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Login to Docker Hub # required for un-throttled pulls
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Quay.io
+        uses: docker/login-action@v3
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USER }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Configure arch
+        run: perl -i -pe 's{("linux/${{ matrix.arch == 'arm64' && 'amd' || 'arm' }}64")}{# $1}' docker-bake.hcl
+      - name: Build the Images
+        uses: docker/bake-action@v6
+        env:
+          registry: quay.io/tembo
+          revision: ${{ github.sha }}
+        with:
+          push: false
+          targets: postgres,postgres-cloud

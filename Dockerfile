@@ -1,19 +1,25 @@
 # syntax=docker/dockerfile:1.7-labs
 ARG BASE
+ARG PG_VERSION=17.4
+ARG PG_PREFIX=/usr/lib/postgresql
+ARG PG_HOME_DIR=/var/lib/postgresql
+ARG DATA_VOLUME=${PG_HOME_DIR}/data
+ARG DATA_ROOT_DIR=${DATA_VOLUME}/tembo
+ARG TEMBO_LIB_DIR=${DATA_VOLUME}/lib
+
+##############################################################################
 # Build trunk.
 FROM rust:1.83-bookworm AS trunk
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 RUN cargo install pg-trunk
 
+##############################################################################
 # Build PostgreSQL.
 FROM ${BASE} AS build
-ARG PG_VERSION=17.4
-ARG PG_MAJOR=${PG_VERSION%%.*}
-ARG PG_PREFIX=/usr/lib/postgresql
-ARG PG_HOME_DIR=/var/lib/postgresql
-ARG DATA_VOLUME=${PG_HOME_DIR}/data
-ARG DATA_ROOT_DIR=${DATA_VOLUME}/tembo
-
+ARG PG_VERSION
+ARG PG_PREFIX
+ARG DATA_VOLUME
+ARG DATA_ROOT_DIR
 WORKDIR /work
 
 # Upgrade to the latest packages and install dependencies.
@@ -53,8 +59,9 @@ ADD https://ftp.postgresql.org/pub/source/v${PG_VERSION}/postgresql-${PG_VERSION
 
 RUN tar jxf postgresql-${PG_VERSION}.tar.bz2
 
+WORKDIR /work/postgresql-${PG_VERSION}
+
 RUN set -ex; \
-    cd postgresql-${PG_VERSION}; \
     # Patch Makefile.global.in to set pkglibdir to live on the Tembo data volume.
     perl -pi -e "s{^pkglibdir =.+}{pkglibdir = ${DATA_VOLUME}/\@PG_MAJORVERSION\@/lib}" src/Makefile.global.in; \
     ./configure \
@@ -89,18 +96,16 @@ RUN set -ex; \
         --with-systemd \
         --with-selinux; \
     make -j$(nproc); \
-    make install; \
-    make -C contrib/auto_explain install; \
-    make -C contrib/pg_stat_statements install;
+    make install
 
+##############################################################################
 # Build the base image.
 FROM ${BASE} AS install
-ARG PG_VERSION=17.4
-ARG PG_MAJOR=${PG_VERSION%%.*}
-ARG PG_PREFIX=/usr/lib/postgresql
-ARG PG_HOME_DIR=/var/lib/postgresql
-ARG DATA_VOLUME=${PG_HOME_DIR}/data
-ARG TEMBO_LIB_DIR=${DATA_VOLUME}/lib
+ARG PG_VERSION
+ARG PG_HOME_DIR
+ARG PACKAGES
+ARG DATA_ROOT_DIR
+ARG TEMBO_LIB_DIR
 
 # Create the Postgres user and set its uid to what CNPG expects.
 RUN groupadd -r postgres --gid=999 && \
@@ -139,8 +144,6 @@ RUN apt-get update && apt-get upgrade -y && apt-get install --no-install-recomme
 # Clean up cache and finish configuration.
 ENV PATH=$PATH:${PG_PREFIX}/bin
 RUN set -xe; \
-    # Remove libpq without deleting psycopg2.
-    dpkg -r --force-depends libpq5; \
     apt-get clean -y; \
     # Set up en_US.UTF-8
     localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8; \
@@ -150,22 +153,38 @@ RUN set -xe; \
     printf "${TEMBO_LIB_DIR}\n" > /etc/ld.so.conf.d/tembo.conf; \
     mkdir -p "${TEMBO_LIB_DIR}/lib"; \
     rm -rf /var/lib/apt/lists/* /var/cache/* /var/log/*; \
-    ldconfig; \
-    # Stash away extensions and shared libraries to a temp directory.
-    mkdir /tmp/pg_pkglibdir /tmp/pg_sharedir; \
-    cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
-    cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir
+    ldconfig;
 
-# Build the final image as a single layer.
+##############################################################################
+# Build the postgres image as a single layer.
 FROM scratch AS postgres
-ARG PG_VERSION 17.4
-ARG PG_MAJOR=${PG_VERSION%%.*}
-ARG PG_PREFIX=/usr/lib/postgresql
-ARG PG_HOME_DIR=/var/lib/postgresql
-COPY --from=install / /
+ARG PG_HOME_DIR
+ARG PG_PREFIX
 
+COPY --from=install / /
 WORKDIR ${PG_HOME_DIR}
 ENV TZ=Etc/UTC LANG=en_US.utf8 PATH=${PG_PREFIX}/bin:$PATH
 STOPSIGNAL SIGINT
 USER 26
-CMD ["postgres"]
+
+##############################################################################
+# Install extras for Tembo Cloud.
+FROM build AS build-cloud
+
+RUN set -ex; \
+    # Build and install auto_explain and pg_stat_statements.
+    make -C contrib/auto_explain install; \
+    make -C contrib/pg_stat_statements install;
+
+##############################################################################
+# Add the Tembo Cloud extras.
+FROM postgres AS postgres-cloud
+
+COPY --from=build --parents /var/lib/./postgresql /var/lib/
+
+RUN set -ex; \
+    # Stash away extensions and shared libraries to a temp directory. The
+    # operator will copy them into the DATA_VOLUME persistent volume.
+    mkdir /tmp/pg_pkglibdir /tmp/pg_sharedir; \
+    cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
+    cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir
