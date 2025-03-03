@@ -7,7 +7,7 @@ set -Eeo pipefail
 PGDATA=${PGDATA:-/var/lib/postgresql/data/pgdata}
 
 main() {
-    if [ "${1:-postgres}" = 'postgres' ]; then
+    if [ "${1:-postgres}" != 'postgres' ]; then
 	    exec "$@"
     fi
 

@@ -2,10 +2,9 @@
 ARG BASE
 ARG PG_VERSION=17.4
 ARG PG_PREFIX=/usr/lib/postgresql
-ARG DATA_VOLUME=/var/lib/postgresql/data
-ARG PGDATA=${DATA_VOLUME}/pgdata
-ARG DATA_ROOT_DIR=${DATA_VOLUME}/tembo
-ARG TEMBO_LIB_DIR=${DATA_VOLUME}/lib
+ARG TEMBO_VOLUME=/var/lib/postgresql/tembo
+ARG CNPG_VOLUME=/var/lib/postgresql/data
+ARG TEMBO_LIB_DIR=${TEMBO_VOLUME}/lib
 
 ##############################################################################
 # Build trunk.
@@ -16,7 +15,7 @@ RUN cargo install pg-trunk
 ##############################################################################
 # Build PostgreSQL.
 FROM ${BASE} AS build
-ARG PG_VERSION PG_PREFIX DATA_ROOT_DIR
+ARG PG_VERSION PG_PREFIX TEMBO_VOLUME
 WORKDIR /work
 
 # Upgrade to the latest packages and install dependencies.
@@ -63,7 +62,7 @@ RUN set -ex; \
         CFLAGS="-g -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-omit-frame-pointer" \
         LDFLAGS="-Wl,-z,relro -Wl,-z,now" \
         --prefix="${PG_PREFIX}" \
-        --datarootdir="${DATA_ROOT_DIR}" \
+        --datarootdir="${TEMBO_VOLUME}/share" \
         --docdir="${PG_PREFIX}/doc" \
         --htmldir="${PG_PREFIX}/html" \
         --localedir="${PG_PREFIX}/locale" \
@@ -96,7 +95,7 @@ RUN set -ex; \
 ##############################################################################
 # Build the base image.
 FROM ${BASE} AS install
-ARG PG_VERSION DATA_VOLUME PGDATA PACKAGES DATA_ROOT_DIR TEMBO_LIB_DIR PG_PREFIX
+ARG PG_VERSION TEMBO_VOLUME CNPG_VOLUME PACKAGES TEMBO_LIB_DIR PG_PREFIX
 
 # Copy the PostgreSQL files and trunk.
 COPY --link --from=build --parents /var/lib/./postgresql /var/lib/
@@ -125,9 +124,9 @@ RUN apt-get update && apt-get upgrade -y && apt-get install --no-install-recomme
 
 # Create the Postgres user and set its uid to what CNPG expects.
 RUN groupadd -r postgres --gid=999 && \
-	useradd -r -g postgres --uid=26 --home-dir=${DATA_VOLUME} --shell=/bin/bash postgres && \
-    mkdir -p ${PGDATA}; \
-    chown -R postgres:postgres ${DATA_VOLUME};
+	useradd -r -g postgres --uid=26 --home-dir=${CNPG_VOLUME} --shell=/bin/bash postgres && \
+    mkdir -p ${CNPG_VOLUME}; \
+    chown -R postgres:postgres ${CNPG_VOLUME};
 
 # Add the entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
@@ -142,6 +141,8 @@ RUN set -xe; \
     # and Postgres versioned libraries in PG_LIB_DIR.
     printf "%s\n" "$(pg_config --libdir)" > /etc/ld.so.conf.d/postgres.conf; \
     printf "${TEMBO_LIB_DIR}\n" > /etc/ld.so.conf.d/tembo.conf; \
+    mkdir -p "${TEMBO_VOLUME}"; \
+    chown -R postgres:postgres ${TEMBO_VOLUME}; \
     mkdir -p "${TEMBO_LIB_DIR}"; \
     rm -rf /var/lib/apt/lists/* /var/cache/* /var/log/*; \
     ldconfig;
@@ -149,11 +150,11 @@ RUN set -xe; \
 ##############################################################################
 # Build the postgres image as a single layer.
 FROM scratch AS postgres
-ARG PG_PREFIX DATA_VOLUME PGDATA
+ARG PG_PREFIX TEMBO_VOLUME CNPG_VOLUME
 
 COPY --link --from=install / /
-WORKDIR ${DATA_VOLUME}
-ENV TZ=Etc/UTC LANG=en_US.utf8 PATH=${PG_PREFIX}/bin:$PATH PGDATA=${PGDATA}
+WORKDIR ${CNPG_VOLUME}
+ENV TZ=Etc/UTC LANG=en_US.utf8 PATH=${PG_PREFIX}/bin:$PATH CNPG_VOLUME=${CNPG_VOLUME}
 STOPSIGNAL SIGINT
 USER 26
 ENTRYPOINT ["docker-entrypoint.sh"]
@@ -161,18 +162,19 @@ ENTRYPOINT ["docker-entrypoint.sh"]
 ##############################################################################
 # Install extras for Tembo Cloud.
 FROM build AS build-cloud
+ENV PATH=${PG_PREFIX}/bin:$PATH
 
 RUN set -ex; \
     # Build and install auto_explain and pg_stat_statements.
     make -C contrib/auto_explain install; \
-    make -C contrib/pg_stat_statements install;
+    make -C contrib/pg_stat_statements install; \
+    cp -lr $(pg_config --sharedir) /tmp/pg_sharedir;
 
 ##############################################################################
 # Add the Tembo Cloud extras.
 FROM postgres AS postgres-cloud
 
-COPY --link --from=build --parents /var/lib/./postgresql /var/lib/
+COPY --link --from=build-cloud --parents /var/lib/./postgresql /var/lib/
+COPY --link --from=build-cloud /tmp /tmp/
 
-# Stash away extensions to a temp directory. The operator will copy them
-# into the DATA_VOLUME persistent volume.
-RUN ln $(pg_config --sharedir) /tmp/pg_sharedir
+WORKDIR ${TEMBO_VOLUME}
