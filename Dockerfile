@@ -122,12 +122,6 @@ RUN apt-get update && apt-get upgrade -y && apt-get install --no-install-recomme
     libkrb5-3 \
     ${PACKAGES}
 
-# Create the Postgres user and set its uid to what CNPG expects.
-RUN groupadd -r postgres --gid=999 && \
-	useradd -r -g postgres --uid=26 --home-dir=${CNPG_VOLUME} --shell=/bin/bash postgres && \
-    mkdir -p ${CNPG_VOLUME}; \
-    chown -R postgres:postgres ${CNPG_VOLUME};
-
 # Add the entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
 
@@ -137,24 +131,28 @@ RUN set -xe; \
     apt-get clean -y; \
     # Set up en_US.UTF-8
     localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8; \
-    # Configure ldd to find additional shared libraries in TEMBO_LIB_DIR and
-    # and Postgres versioned libraries in PG_LIB_DIR.
+    # Configure ldd to find additional shared libraries in PG_LIB_DIR.
     printf "%s\n" "$(pg_config --libdir)" > /etc/ld.so.conf.d/postgres.conf; \
-    printf "${TEMBO_LIB_DIR}\n" > /etc/ld.so.conf.d/tembo.conf; \
-    mkdir -p "${TEMBO_VOLUME}"; \
-    chown -R postgres:postgres ${TEMBO_VOLUME}; \
-    mkdir -p "${TEMBO_LIB_DIR}"; \
     rm -rf /var/lib/apt/lists/* /var/cache/* /var/log/*; \
     ldconfig;
 
 ##############################################################################
+# Create the postgres user for CNPG.
+FROM install AS cnpg-config
+# Create the Postgres user and set its uid to what CNPG expects.
+RUN groupadd -r postgres --gid=999 && \
+	useradd -r -g postgres --uid=26 --home-dir=${CNPG_VOLUME} --shell=/bin/bash postgres && \
+    mkdir -p ${CNPG_VOLUME}; \
+    chown -R postgres:postgres ${CNPG_VOLUME};
+
+##############################################################################
 # Build the postgres image as a single layer.
 FROM scratch AS postgres
-ARG PG_PREFIX TEMBO_VOLUME CNPG_VOLUME
+ARG PG_PREFIX CNPG_VOLUME
 
-COPY --link --from=install / /
+COPY --link --from=cnpg-config / /
 WORKDIR ${CNPG_VOLUME}
-ENV TZ=Etc/UTC LANG=en_US.utf8 PATH=${PG_PREFIX}/bin:$PATH CNPG_VOLUME=${CNPG_VOLUME}
+ENV TZ=Etc/UTC LANG=en_US.utf8 PATH=${PG_PREFIX}/bin:$PATH
 STOPSIGNAL SIGINT
 USER 26
 ENTRYPOINT ["docker-entrypoint.sh"]
@@ -171,10 +169,30 @@ RUN set -ex; \
     cp -lr $(pg_config --sharedir) /tmp/pg_sharedir;
 
 ##############################################################################
-# Add the Tembo Cloud extras.
-FROM postgres AS postgres-cloud
+FROM install AS tembo-config
+ARG TEMBO_VOLUME TEMBO_LIB_DIR
 
+# Copy over the extra extensions.
 COPY --link --from=build-cloud --parents /var/lib/./postgresql /var/lib/
 COPY --link --from=build-cloud /tmp /tmp/
 
+# Create the postgres user for Tembo.
+RUN groupadd -r postgres --gid=999 && \
+	useradd -r -g postgres --uid=26 --home-dir=${TEMBO_VOLUME} --shell=/bin/bash postgres && \
+    # Configure ldd to find additional shared libraries in TEMBO_LIB_DIR.
+    printf "${TEMBO_LIB_DIR}\n" > /etc/ld.so.conf.d/tembo.conf; \
+    mkdir -p "${TEMBO_LIB_DIR}"; \
+    rm -rf /var/lib/apt/lists/* /var/cache/* /var/log/*; \
+    ldconfig;
+
+##############################################################################
+# Add the Tembo Cloud extras.
+FROM scratch AS postgres-cloud
+ARG PG_PREFIX TEMBO_VOLUME
+
+COPY --link --from=tembo-config / /
 WORKDIR ${TEMBO_VOLUME}
+ENV TZ=Etc/UTC LANG=en_US.utf8 PATH=${PG_PREFIX}/bin:$PATH
+STOPSIGNAL SIGINT
+USER 26
+ENTRYPOINT ["docker-entrypoint.sh"]
