@@ -1,150 +1,198 @@
-# tembo-images
-Docker images for Postgres
+# Tembo Postgres Docker Images
 
-## Table of Contents
+This repository contains the resources to build the Postgre Docker images for
+[Tembo Cloud]. It builds images for the latest releases of Postgres 14–17 on
+Ubuntu Noble (24.04) and Jimmy (22.04) for the ARM64 and AMD64 processors.
 
-- [Requirements](#requirements)
-- [How to Create Custom Stack Image and Test Locally](#how-to-create-custom-stack-image-and-test-locally) 
-- [How to Publish Custom Stack Image to Quay and AWS ECR](#how-to-publish-custom-stack-image-to-quay-and-aws-ecr)
-- [How to Apply Custom Image to an Existing Stack](#how-to-apply-custom-image-to-an-existing-stack)
+## Key Features
 
-## Requirements
+*   Simple entrypoint script to run a standalone in Docker an connect from
+    inside the container:
 
-- rust
-- kind
-- just
+    ```sh
+    docker run --name tembo-postgres -d localhost:5001/postgres:17
+    docker exec -it tembo-postgres psql
+    ```
 
-## How to Create Custom Stack Image and Test Locally
+*   Runs in [CloudNativePG]; just set the `imageName` key in the `spec`
+    section of the `Cluster` manifest:
 
-### 1. Ensuring a proper setup
+    ```yaml
+    apiVersion: postgresql.cnpg.io/v1
+    kind: Cluster
+    metadata:
+      # [...]
+    spec:
+      imageName: quay.io/tembo/postgres:17
+      #[...]
+    ```
 
-#### Create directory and files
+*   Based on the latest and previous LTS Ubuntu [Ubuntu Linux], currently
+    24.04 LTS "Noble Numbat" and 22.04 LTS "Jammy Jellyfish".
 
-Within your local developer environment, start by creating a new directory for your custom image. Note that current naming conventions are to abbreviate the Stack title and add a -cnpg tag, for example:
+*   Built for AMD64 (x86_64) and ARM64 (AArch64) processors.
 
-- `geo-cnpg` for the Geospatial Stack
-- `ml-cnpg` for the Machine Learning Stack
+*   Automatically rebuilt every Monday to ensure they remain up-to-date.
 
-```sh
-mkdir <your-image-name>
-```
+## Building
 
-From within the newly-created directory, you can then create a `Cargo.toml` and `Dockerfile`.
-
-``` sh
-touch Cargo.toml Dockerfile
-```
-
-#### Check local Docker registry
-
-When the image is eventually built once `docker build` is invoked (a couple steps from this point), the resultant container is stored within a local docker registry.
-To allow for a fresh workspace, it's good practice to check whether there are any containers currently running, and if so, to stop and remove them.
-The following commands can help you achieve that:
-
-``` sh
-docker ps
-docker stop <registry-container-id>
-docker rm <registry-container-id>
-```
-
-The registry can then be started via the following:
-
-```
-docker run -d -p 5000:5000 --restart=always --name registry registry:2
-```
-
-### 2. The Cargo.toml file
-
-The contents of the `Cargo.toml` file are metadata to a given image, including name and description.
-This information can be readily found by referring to an already published image, for example [geo-cnpg](https://github.com/tembo-io/tembo-images/blob/main/geo-cnpg/Cargo.toml) and adapted to your new image.
-
-### 3. The Dockerfile
-
-Composing the `Dockerfile` is relatively more involved, but nevertheless straightforward.
-The `Dockerfile` contains all the instructions necessary for Docker to build your image, including, but not limited to `runtime dependencies` and steps to `compiling Postgres extensions` from source.
-Defining dependencies in a Stack-specific image is important to emphasize, as it helps reduce bloat of the commonly-leveraged standard-cnpg image.
-You're invited to visit the `Dockerfile`s from the different images in this repository for inspiration.
-
-### 4. Building the image
-
-At this stage you're ready to build the image. 
+The easiest way to build and load a single image into Docker is:
 
 ```sh
-docker build -t localhost:5000/my-custom-image:15-0.0.1 .
+arch="$(uname -m)" pg_version=17.4 docker buildx bake --load
 ```
 
-Bear in mind what each part of this command is doing, as this may help you adapt to your specific situation if necessary:
+Set these environment variables to modify the build behavior:
 
-- `docker`:
-- `build`:
-- `-t`: The `t` flag is an option that allows you to apply a tag to the image.
-- `localhost:5000`:
-- `my-custom-image`:
-- `15-0.0.1`:
-- `.`: The period `.` represents executing the given command within the current directory. If you'd prefer to include a file path, feel free to replace this period `.` with your path. 
+*   `registry`: The name of the registry to push to. Defaults to
+    `quay.io/tembo`.
+*   `revision`: Current Git commit SHA. Used for annotations, not really
+    needed for testing, but can be set via `revision="$(git rev-parse HEAD)"`.
+*   `pg`: The version of Postgres to build, in `$major.$minor` format.
+*   `os`: The OS version to build on. Currently one of "noble" or "jammy".
+*   `arch`: The CPU architecture to build for. Use `uname -m` to get a valid
+    value.
 
-### 5. Pushing the newly-created image to your local docker registry
+## Running with Tembo Operator
 
-```sh
-docker push localhost:5000/my-custom-image:15-0.0.1
-```
+To run the image locally with the Tembo Operator, you'll need:
 
-NOTE: At this stage it takes some moments for the proper image to appear in docker images. Still going through final troubleshooting, but might also require:
-docker build -t my-custom-postgis-image:15-0.0.5 .
-docker push my-custom-postgis-image:15-0.0.5
+*   [docker](https://www.docker.com)
+*   [just](https://just.systems/man/en/packages.html)
+*   [kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
+*   [Rust](https://www.rust-lang.org/tools/install)
 
-The following command allows you to confirm a successful push:
+1.  Start a local registry on port 5001:
 
-```sh
-docker images
-```
+    ```sh
+    docker run -d -p 5001:5000 --restart=always --name registry registry:2
+    ```
 
-### 6. Applying custom image to a yaml file to prepare for upcoming `kubectl apply` command
+2.  Build Tembo Postgres and push it to the local registry:
 
-For the purposes of these instructions, we will utilize the `sample-standard.yaml` file, found at `/tembo/tembo-operator/yaml/sample-standard.yaml`
-Using your preferred IDE or text editor, update the line that defines the image:
+    ```sh
+    registry=localhost:5001 arch="$(uname -m)" docker buildx bake --push
+    ```
 
-```yaml
-image: my-custom-image:15-0.0.1
-```
+3.  If you haven't already, clone the tembo repository and navigate to the
+    `tembo-operator` directory.
 
-### 7. Running the Tembo Operator locally
+    ```sh
+    git clone https://github.com/tembo-io/tembo.git
+    cd tembo/tembo-operator
+    ```
 
-If you haven't already, clone the tembo repository to your local machine and navigate to the tembo-operator directory.
+4.  Run the following commands to start the Tembo Operator:
 
-```sh
-git clone https://github.com/tembo-io/tembo.git
-cd tembo/tembo-operator
-```
+    ```sh
+    just start-kind
+    just run
+    ```
 
-Once there, run the following to start the Tembo Operator:
+5.  Edit `yaml/sample-standard.yaml` and set `image` to the image name:
 
-```sh
-just start-kind
-just run
-```
+    ```yaml
+    image: localhost:5001/postgres:17
+    ```
 
-### 8. Connecting your local docker registry and kind kubernetes cluster
+6.  Load the image into the `kind` Kubernetes registry and create the cluster:
 
-```sh
-kind load docker-image my-custom-image:15-0.0.1
-kubectl apply -f yaml/sample-standard.yaml
-```
+    ```sh
+    kind load docker-image localhost:5001/postgres:17
+    kubectl apply -f yaml/sample-standard.yaml
+    ```
 
-To check for success, run:
+7.  To check for success, run:
 
-```sh
-kubectl get pods
-```
+    ```sh
+    kubectl get pods
+    ```
 
-### 9. Enter pod for further testing and exploration
+8.  Connect to the pod for further testing and exploration:
 
-```sh
-kubectl exec -it sample-standard-1 -- /bin/bash
-```
+    ```sh
+    kubectl exec -it -c postgres sample-standard-1 -- bash
+    kubectl exec -it -c postgres sample-standard-1 -- psql
+    ```
 
-## How to Publish Custom Stack Image to Quay and AWS ECR
-TODO
+9.  When done, hit `ctrl+c ` to shut down the operator, then delete the `kind`
+    cluster and the registry:
 
-## How to Apply Custom Image to an Existing Stack
-TODO
+    ```sh
+    kind delete cluster
+    docker rm -f registry
+    ```
+
+## Details
+
+### Tags
+
+The tags include the Postgres version, OS name, and timestamp e.g.,
+
+*   `postgres:17-jammy`
+*   `postgres:17.4-jammy`
+*   `postgres:17.4-jammy-202503041708`
+
+Images built on the latest OS, also have the tags:
+
+*   `postgres:17`
+*   `postgres:17.4`
+
+And an image built on the latest Postgres includes the tag:
+
+*   `postgres:latest`
+
+### Directories
+
+*   `/var/lib/postgresql`: The home directory for the `postgres` user where
+    all the potentially persistent data files and libraries live.
+
+*   `/var/lib/postgresql/data`: The default data directory where the Docker
+    entrypoint script and [CloudNativePG] store the data files in a `pgdata`
+    subdirectory. Mount a volume to this directory for data persistence.
+
+*   `/var/lib/postgresql/tembo`: The directory where [Tembo Cloud] mounts a
+    persistent volume and stores persistent data:
+    *   Tembo initializes and runs the cluster from the `pgdata` subdirectory.
+    *   Given a Postgres major version, e.g., `17`, the Tembo stores extension
+        shared libraries in `17/lib` and extension data files in `17/share`.
+    *   Given an Ubuntu code name, such as `noble`, Tembo stores shared system
+        libraries required by extensions in `noble/lib`.
+
+*   `/usr/lib/postgresql`: The home of the PostgreSQL binaries, libraries, and
+    header & locale files. Immutable in [CloudNativePG] and [Tembo Cloud].
+
+## Tasks
+
+### Postgres Minor Release
+
+*   Update the list under `jobs.bake.strategy.matrix.pg` in
+    `.github/workflows/bake.yaml`.
+*   Update the default value of the `pg` variable definition in
+    `docker-bake.hcl`.
+
+### Ubuntu Minor Release
+
+*   Update the `digest` values in the `os_spec` variable definition in
+    `docker-bake.hcl`.
+
+### Postgres Major Release
+
+*   Update the default value of the `pg` and `latest_pg` variable definitions
+    in `docker-bake.hcl`.
+*   Update the list under `jobs.bake.strategy.matrix.pg` in
+    `.github/workflows/bake.yaml`.
+*   Update the `LATEST_PG` constant in `manifest.js`.
+*   Update examples in `README.md`.
+
+### Ubuntu Major Release
+
+*   Add a new object to the `os_spec` variable and update the the `os` and
+    `latest_os` variable definitions in `docker-bake.hcl`.
+*   Update the list under `jobs.bake.strategy.matrix.os` in
+    `.github/workflows/bake.yaml`.
+*   Update the `LATEST_OS` constant in `manifest.js`.
+*   Update examples in `README.md`.
+
+  [Tembo Cloud]: https://tembo.io/docs/product/cloud/overview "Tembo Cloud Overview"
+  [CloudNativePG]: https://cloudnative-pg.io "CloudNativePG - PostgreSQL Operator for Kubernetes"

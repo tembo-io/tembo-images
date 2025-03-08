@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -Eeo pipefail
+
+# Starts a simply-configured server with default authentication that trusts
+# local connections from inside the container.
+
+export PGDATA=${PGDATA:-/var/lib/postgresql/data/pgdata}
+
+main() {
+    if [ "${1:-postgres}" != 'postgres' ]; then
+	    exec "$@"
+    fi
+
+    if [ "$(id -u)" = '0' ]; then
+		cat >&2 <<-'EOE'
+			Error: Postgres cannot be run by root. Please restart the container
+                   with specifying a user, or run another application on startup.
+		EOE
+		exit 1
+    fi
+
+    # Initialize the database.
+    mkdir -p "$PGDATA"
+    chmod 700 "$PGDATA" || :
+
+	if [ ! -s "$PGDATA/PG_VERSION" ]; then
+        VERSION="$(pg_config --version)"
+        VERSION="${VERSION%.*}"
+        if [ "${VERSION#* }" -ge 17 ]; then
+            # Prefer C.UTF-8.
+		    initdb -D "$PGDATA" -U postgres -c listen_addresses='*' --auth=trust --locale-provider builtin --builtin-locale C.UTF-8 --encoding UNICODE
+        else
+            # Default to en_US.UTF-8.
+            initdb -D "$PGDATA" -U postgres -c listen_addresses='*' --auth=trust --locale en_US.UTF-8 --encoding UNICODE
+        fi
+	fi
+
+    # Start the server. Logs go to STDOUT.
+    postgres
+}
+
+main "$@"
