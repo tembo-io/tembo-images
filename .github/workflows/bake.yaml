@@ -60,13 +60,8 @@ jobs:
           pg: ${{ matrix.pg }}
         with:
           pull: true
-          # Set to build only the current arch, to push only SHAs, and no
-          # tags. Required for the manifest step to build and push a
-          # multi-platform manifest.
-          set: |
-            *.platform=linux/${{ matrix.arch[1] }}
-            *.output=type=${{ github.ref_name == 'main' && 'image,push-by-digest=true,push=true' || 'cacheonly' }}
-            *.tags=quay.io/tembo/postgres
+          # Push only on main.
+          set: ${{ github.ref_name == 'main' && '' || '*.output=type=cacheonly' }}
       - name: Save Metadata
         run: echo '${{ steps.build.outputs.metadata }}' > build-${{ matrix.arch[1] }}-${{ matrix.os[1] }}-${{ matrix.pg }}.json
       - name: Upload Metadata

@@ -8,15 +8,10 @@
 // SHAs:
 //
 //     registry=localhost:5001 arch=amd64 pg=17.4 \
-//         docker buildx bake \
-//         --set '*.output=push-by-digest=true,type=image,push=true' \
-//         --set '*.tags=localhost:5001/postgres' \
-//         --metadata-file amd64.json
+//         docker buildx bake --metadata-file amd64.json
+//
 //     registry=localhost:5001 arch=arm64 pg=17.4 \
-//         docker buildx bake \
-//         --set '*.output=push-by-digest=true,type=image,push=true' \
-//         --set '*.tags=localhost:5001/postgres' \
-//         --metadata-file arm64.json
+//         docker buildx bake --metadata-file arm64.json
 //
 // Run the script.
 //
@@ -26,6 +21,7 @@
 // Get a list of all the tags in the registry:
 //
 //     curl -s localhost:5001/v2/postgres/tags/list | jq
+//     curl -s localhost:5001/v2/postgres-dev/tags/list | jq
 
 const LATEST_OS="noble"
 const LATEST_PG=17
@@ -47,11 +43,13 @@ for (let i = 2; i < process.argv.length; i++) {
 
     for (let target in build_meta) {
         // Target defined by target.name in docker-bake.hcl. Example:
-        // postgres-17_4-arm64-noble
+        // postgres_dev-17_4-arm64-noble
         const parts = target.split("-")
-        const pgv = parts[1].replace("_", "."), arch = parts[2], os = parts[3]
+        const name = parts[0].replace("_", "-")
+        const pgv = parts[1].replace("_", ".")
+        const arch = parts[2], os = parts[3]
         const [major] = pgv.split(".")
-        const key = `${ pgv }-${ os }`
+        const key = `${name }-${ pgv }-${ os }`
         const digest = build_meta[target]["containerimage.digest"]
 
         if (!images.hasOwnProperty(key)) {
@@ -60,13 +58,12 @@ for (let i = 2; i < process.argv.length; i++) {
             continue
         }
 
-        const image = `${ process.env.REGISTRY }/postgres`
+        const image = `${ process.env.REGISTRY }/${ name }`
 
         // Assemble the image names with their SHAs.
         const shas = `${ image }@${ digest } ${ image }@${ images[key] }`
 
-        // Assemble the tags. They should be the same as those defined in
-        // docker-back.hcl's tags() function.
+        // Assemble the tags.
         const tags = [
             `${ image }:${ major }-${ os }`,
             `${ image }:${ pgv }-${ os }`,

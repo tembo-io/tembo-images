@@ -34,9 +34,14 @@ Ubuntu Noble (24.04) and Jimmy (22.04) for the ARM64 and AMD64 processors.
 
 *   Automatically rebuilt every Monday to ensure they remain up-to-date.
 
+*   In addition to `quay.io/tembo/postgres`, als builds
+    `quay.io/tembo/postgres-dev`, which contains the tooling to compile
+    extensions, including compilers, Git, Curl, and more.
+
 ## Building
 
-The easiest way to build and load a single image into Docker is:
+The easiest way to build and load the `postgres` and `postgres-dev` images
+into Docker is:
 
 ```sh
 arch="$(uname -m)" pg_version=17.4 docker buildx bake --load

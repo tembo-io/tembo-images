@@ -77,13 +77,20 @@ authors = "Tembo"
 url = "https://github.com/tembo-io/tembo-images"
 
 target "default" {
-  matrix = {}
+  matrix = {
+    tgt = [
+      "postgres",
+      "postgres-dev",
+    ],
+  }
+  target = "${tgt}"
   platforms = ["linux/${arch_for[arch]}"]
-  dockerfile = "Dockerfile"
-  name = "postgres-${replace(pg, ".", "_")}-${arch_for[arch]}-${os}"
-  tags = tags(pg, os)
   context = "."
-  target = "postgres"
+  dockerfile = "Dockerfile"
+  name = "${replace(tgt, "-", "_")}-${replace(pg, ".", "_")}-${arch_for[arch]}-${os}"
+  # Push by SHA only.
+  set = "output=type=image,push-by-digest=true,push=true"
+  tags = ["${registry}/${tgt}"]
   args = {
     PG_VERSION = "${pg}"
     BASE = "${os_spec[os].image}@sha256:${os_spec[os].digest}"
@@ -97,8 +104,8 @@ target "default" {
     "index,manifest:org.opencontainers.image.version=${pg}",
     "index,manifest:org.opencontainers.image.revision=${revision}",
     "index,manifest:org.opencontainers.image.vendor=${authors}",
-    "index,manifest:org.opencontainers.image.title=Tembo PostgreSQL ${pg}",
-    "index,manifest:org.opencontainers.image.description=PostgreSQL ${pg}",
+    "index,manifest:org.opencontainers.image.title=${title_for(tgt, pg)}",
+    "index,manifest:org.opencontainers.image.description=${title_for(tgt, pg)}",
     "index,manifest:org.opencontainers.image.documentation=${url}",
     "index,manifest:org.opencontainers.image.authors=${authors}",
     "index,manifest:org.opencontainers.image.licenses=PostgreSQL",
@@ -112,8 +119,8 @@ target "default" {
     "org.opencontainers.image.version" = "${pg}",
     "org.opencontainers.image.revision" = "${pg}",
     "org.opencontainers.image.vendor" = "${authors}",
-    "org.opencontainers.image.title" = "PostgreSQL ${pg}",
-    "org.opencontainers.image.description" = "PostgreSQL ${pg}",
+    "org.opencontainers.image.title" = "${title_for(tgt, pg)}",
+    "org.opencontainers.image.description" = "${title_for(tgt, pg)}",
     "org.opencontainers.image.documentation" = "${url}",
     "org.opencontainers.image.authors" = "${authors}",
     "org.opencontainers.image.licenses" = "PostgreSQL"
@@ -129,24 +136,8 @@ function major {
   result = index(split(".",version), 0)
 }
 
-# Creates the tags for the Postgres image. If `os_name` is the same as
-# `latest_os`, it returns five tags, plus "latest" if `pg` is the same as
-# `latest_pg`. Otherwise it returns three. These are the standard tags, but we
-# don't actually use this configuration currently, because the build process
-# in .github/workflows/bake.yaml requires building amd64 and arm64 images
-# separately and pushing them by their SHAs and then joining them into
-# multi-platform images in manifest.js as a second step. But the pattern here
-# and in manifest.js should be the same.
-function tags {
-  params = [ pg, os_name ]
-  result = flatten([
-    os_name == latest_os ? flatten([
-      major(pg) == latest_pg ? ["${registry}/postgres:latest"] : [],
-      "${registry}/postgres:${major(pg)}",
-      "${registry}/postgres:${pg}",
-    ]) : [],
-    "${registry}/postgres:${major(pg)}-${os_name}",
-    "${registry}/postgres:${pg}-${os_name}",
-    "${registry}/postgres:${pg}-${os_name}-${formatdate("YYYYMMDDhhmm", now)}",
-  ])
+# Returns the title of the target image.
+function title_for {
+  params = [ tgt, pgv ]
+  result = "Tembo PostgreSQL ${pgv}${tgt == "postgres" ? "" : " for Development"}"
 }
