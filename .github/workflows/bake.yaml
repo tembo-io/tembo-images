@@ -61,7 +61,7 @@ jobs:
         with:
           pull: true
           # Push only on main.
-          set: ${{ github.ref_name == 'main' && '' || '*.output=type=cacheonly' }}
+          set: "*.output=type=${{ github.ref_name == 'main' && 'image,push-by-digest=true,push=true' || 'cacheonly' }}"
       - name: Save Metadata
         run: echo '${{ steps.build.outputs.metadata }}' > build-${{ matrix.arch[1] }}-${{ matrix.os[1] }}-${{ matrix.pg }}.json
       - name: Upload Metadata

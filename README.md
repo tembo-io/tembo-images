@@ -10,7 +10,7 @@ Ubuntu Noble (24.04) and Jimmy (22.04) for the ARM64 and AMD64 processors.
     inside the container:
 
     ```sh
-    docker run --name tembo-postgres -d localhost:5001/postgres:17
+    docker run --name tembo-postgres -d quay.io/tembo/postgres
     docker exec -it tembo-postgres psql
     ```
 
@@ -97,7 +97,7 @@ To run the image locally with the Tembo Operator, you'll need:
 5.  Edit `yaml/sample-standard.yaml` and set `image` to the image name:
 
     ```yaml
-    image: localhost:5001/postgres:17
+    image: localhost:5001/postgres:latest
     ```
 
 6.  Load the image into the `kind` Kubernetes registry and create the cluster:
@@ -158,11 +158,12 @@ And an image built on the latest Postgres includes the tag:
 
 *   `/var/lib/postgresql/tembo`: The directory where [Tembo Cloud] mounts a
     persistent volume and stores persistent data:
-    *   Tembo initializes and runs the cluster from the `pgdata` subdirectory.
-    *   Given a Postgres major version, e.g., `17`, the Tembo stores extension
-        shared libraries in `17/lib` and extension data files in `17/share`.
-    *   Given an Ubuntu code name, such as `noble`, Tembo stores shared system
-        libraries required by extensions in `noble/lib`.
+    *   `pgdata`: Tembo initializes and runs the cluster from this
+        subdirectory.
+    *   `mod`: Tembo stores extension module libraries this subdirectory.
+    *   `share`: Tembo stores and extension data files in this subdirectory.
+    *   `lib`: Tembo stores shared libraries required by extensions in this
+        subdirectory.
 
 *   `/usr/lib/postgresql`: The home of the PostgreSQL binaries, libraries, and
     header & locale files. Immutable in [CloudNativePG] and [Tembo Cloud].

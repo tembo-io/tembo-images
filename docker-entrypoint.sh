@@ -24,15 +24,24 @@ main() {
     chmod 700 "$PGDATA" || :
 
 	if [ ! -s "$PGDATA/PG_VERSION" ]; then
-        VERSION="$(pg_config --version)"
-        VERSION="${VERSION%.*}"
-        if [ "${VERSION#* }" -ge 17 ]; then
-            # Prefer C.UTF-8.
-		    initdb -D "$PGDATA" -U postgres -c listen_addresses='*' --auth=trust --locale-provider builtin --builtin-locale C.UTF-8 --encoding UNICODE
+        opts=(
+            -D "$PGDATA"
+            -U postgres
+            -c listen_addresses='*'
+            -c dynamic_library_path="\$libdir:/var/lib/postgresql/tembo/mod"
+            --auth trust
+            --encoding UNICODE
+        )
+
+        if [ "$(pg_config --version | perl -ne '/(\d+)/ & print $1')" -ge 17 ]; then
+            # Prefer builtin C.UTF-8.
+            opts+=(--locale-provider builtin --builtin-locale C.UTF-8)
         else
             # Default to en_US.UTF-8.
-            initdb -D "$PGDATA" -U postgres -c listen_addresses='*' --auth=trust --locale en_US.UTF-8 --encoding UNICODE
+            opts+=(--locale en_US.UTF-8)
         fi
+
+        initdb "${opts[@]}"
 	fi
 
     # Start the server. Logs go to STDOUT.

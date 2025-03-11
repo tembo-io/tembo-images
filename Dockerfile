@@ -11,8 +11,8 @@ ARG CNPG_VOLUME=${PG_HOME}/data
 # System LLD dir.
 ARG TEMBO_VOLUME=${PG_HOME}/tembo
 ARG TEMBO_SHARE_DIR=${TEMBO_VOLUME}/share
-ARG TEMBO_PG_LIB_DIR=${TEMBO_VOLUME}/${PG_MAJOR}/lib
-ARG TEMBO_LD_LIB_DIR=${TEMBO_VOLUME}/${OS_NAME}/lib
+ARG TEMBO_PG_LIB_DIR=${TEMBO_VOLUME}/mod
+ARG TEMBO_LD_LIB_DIR=${TEMBO_VOLUME}/lib
 
 # Set rpath to search the Postgres lib directory, then the Tembo Postgres lib
 # directory, where Trunk-installed extension libraries will live, and the
@@ -126,7 +126,8 @@ RUN set -ex; \
 	useradd -r -g postgres --uid=26 --home-dir=${PG_HOME} --shell=/bin/bash postgres && \
     chown -R postgres:postgres ${PG_HOME};
 
-# Add the entrypoint script
+# Add the README and entrypoint script.
+COPY CONTAINER_README.md "${PG_HOME}/README.md"
 COPY docker-entrypoint.sh /usr/local/bin/
 
 ##############################################################################
@@ -163,7 +164,6 @@ RUN apt-get update && apt-get upgrade -y && apt-get install --no-install-recomme
     libxml2 \
     libxslt1.1 \
     libreadline8 \
-    libtcl8.6 \
     xz-utils \
     libgss3 \
     libkrb5-3 \
@@ -182,16 +182,14 @@ RUN set -xe; \
     # initialization without a temp copy: https://stackoverflow.com/a/72269316/79202)
     cp -lr "$(pg_config --sharedir)" /tmp/pg_sharedir;
 
-# Add the README.
+# Add the README and entrypoint script.
 COPY CONTAINER_README.md "${PG_HOME}/README.md"
+COPY docker-entrypoint.sh /usr/local/bin/
 
 # Create the Postgres user and set its uid to what CNPG expects.
 RUN groupadd -r postgres --gid=999 && \
 	useradd -r -g postgres --uid=26 --home-dir=${PG_HOME} --shell=/bin/bash postgres && \
     chown -R postgres:postgres ${PG_HOME};
-
-# Add the entrypoint script
-COPY docker-entrypoint.sh /usr/local/bin/
 
 ##############################################################################
 # Build the postgres image as a single layer.

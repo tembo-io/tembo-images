@@ -12,17 +12,12 @@ their purposes:
 *   `tembo`: The directory that [Tembo Cloud] mounts as the persistent volume
     for the database and extensions.
 *   `tembo/pgdata`: The data directory initialized by [Tembo Cloud].
+*   `tembo/lib`: A directory for shared library files required by extensions.
+*   `tembo/mod`: A directory for extension module library files.
 *   `tembo/share`: The directory for architecture-independent support files
     used by Postgres. This is the directory used by `pg_config --sharedir` to
     install non-binary extension files. Its files are copied from
     `/tmp/pg_sharedir` when the Tembo operator initializes the volume.
-*   `tembo/${PG_MAJOR}/lib`: A directory for extension shared library files
-    compiled for a specific major version of Postgres.
-*   `tembo/${OS_NAME}/lib`: A directory for OS shared library files.
-*   `tembo/${OS_NAME}/etc`: The home of the library loading cache, updated
-    by `ldconfig` when new files are installed into
-    `tembo/${OS_NAME}/lib`. The canonical cache file, `/etc/ld.so.cache`,
-    is a symlink into this directory.
 
 
 Other useful locations around the system:
