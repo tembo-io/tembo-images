@@ -1,9 +1,8 @@
 ARG PG_VERSION=15
 ARG TAG=latest
 
-FROM rust:1.83-bookworm as builder
-
-ARG TRUNK_VER=0.15.10
+FROM rust:1.85-bookworm as builder
+ARG TRUNK_VER=0.16.1
 
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL sparse
 RUN cargo install --version $TRUNK_VER pg-trunk

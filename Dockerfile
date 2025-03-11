@@ -22,7 +22,7 @@ ARG TEMBO_RPATH=${PG_PREFIX}/lib:${TEMBO_PG_LIB_DIR}:${TEMBO_LD_LIB_DIR}
 
 ##############################################################################
 # Build trunk.
-FROM rust:1.83-bookworm AS trunk
+FROM rust:1.85-bookworm AS trunk
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 RUN cargo install pg-trunk
 
