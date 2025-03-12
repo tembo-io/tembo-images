@@ -5,20 +5,19 @@ ARG PG_VERSION
 ARG PG_MAJOR=${PG_VERSION%%.*}
 ARG PG_PREFIX=/usr/lib/postgresql
 ARG PG_HOME=/var/lib/postgresql
-ARG CNPG_VOLUME=${PG_HOME}/data
+ARG DATA_VOLUME=${PG_HOME}/data
 
 # Tembo-specific volume mount, sharedir, dynamic_library_path target, and
 # System LLD dir.
-ARG TEMBO_VOLUME=${PG_HOME}/tembo
-ARG TEMBO_SHARE_DIR=${TEMBO_VOLUME}/share
-ARG TEMBO_PG_LIB_DIR=${TEMBO_VOLUME}/mod
-ARG TEMBO_LD_LIB_DIR=${TEMBO_VOLUME}/lib
+ARG TEMBO_SHARE_DIR=${DATA_VOLUME}/share
+ARG TEMBO_PG_MOD_DIR=${DATA_VOLUME}/mod
+ARG TEMBO_LD_LIB_DIR=${DATA_VOLUME}/lib
 
 # Set rpath to search the Postgres lib directory, then the Tembo Postgres lib
 # directory, where Trunk-installed extension libraries will live, and the
 # Tembo OS lib directory, where Trunk-installed third-party libraries will
 # live. https://lekensteyn.nl/rpath.html
-ARG TEMBO_RPATH=${PG_PREFIX}/lib:${TEMBO_PG_LIB_DIR}:${TEMBO_LD_LIB_DIR}
+ARG TEMBO_RPATH=${PG_PREFIX}/lib:${TEMBO_PG_MOD_DIR}:${TEMBO_LD_LIB_DIR}
 
 ##############################################################################
 # Build trunk.
@@ -107,7 +106,7 @@ RUN set -ex; \
 ##############################################################################
 # Install additional stuff for the dev image.
 FROM build AS dev-install
-ARG PG_PREFIX PG_HOME TEMBO_LD_LIB_DIR TEMBO_PG_LIB_DIR CNPG_VOLUME
+ARG PG_PREFIX PG_HOME TEMBO_LD_LIB_DIR TEMBO_PG_MOD_DIR
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN set -ex; \
@@ -121,7 +120,7 @@ RUN set -ex; \
     apt-get clean -y; \
     localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8; \
     rm -rf /var/lib/apt/lists/* /var/cache/* /var/log/*; \
-    mkdir -p "${TEMBO_LD_LIB_DIR}" "${TEMBO_PG_LIB_DIR}" "${CNPG_VOLUME}"; \
+    mkdir -p "${TEMBO_LD_LIB_DIR}" "${TEMBO_PG_MOD_DIR}"; \
     groupadd -r postgres --gid=999 && \
 	useradd -r -g postgres --uid=26 --home-dir=${PG_HOME} --shell=/bin/bash postgres && \
     chown -R postgres:postgres ${PG_HOME};
@@ -144,7 +143,7 @@ ENTRYPOINT ["docker-entrypoint.sh"]
 ##############################################################################
 # Install the dependencies necessary for the base image.
 FROM ${BASE} AS install
-ARG CNPG_VOLUME PACKAGES TEMBO_LD_LIB_DIR TEMBO_PG_LIB_DIR PG_PREFIX PG_HOME
+ARG PACKAGES TEMBO_LD_LIB_DIR TEMBO_PG_MOD_DIR PG_PREFIX PG_HOME
 
 # Copy the PostgreSQL files and trunk.
 COPY --link --from=build --parents /var/lib/./postgresql /var/lib/
@@ -173,14 +172,9 @@ RUN apt-get update && apt-get upgrade -y && apt-get install --no-install-recomme
 ENV PATH=${PG_PREFIX}/bin:$PATH
 RUN set -xe; \
     apt-get clean -y; \
-    # Set up en_US.UTF-8
     localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8; \
-    mkdir -p "${TEMBO_LD_LIB_DIR}" "${TEMBO_PG_LIB_DIR}" "${CNPG_VOLUME}"; \
-    rm -rf /var/lib/apt/lists/* /var/cache/* /var/log/*; \
-    # Stash away sharedir and etc so the Tembo operator can copy them back
-    # when it initializes the pod. (We should be able to do it during pod
-    # initialization without a temp copy: https://stackoverflow.com/a/72269316/79202)
-    cp -lr "$(pg_config --sharedir)" /tmp/pg_sharedir;
+    mkdir -p "${TEMBO_LD_LIB_DIR}" "${TEMBO_PG_MOD_DIR}"; \
+    rm -rf /var/lib/apt/lists/* /var/cache/* /var/log/*;
 
 # Add the README and entrypoint script.
 COPY CONTAINER_README.md "${PG_HOME}/README.md"

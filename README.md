@@ -14,19 +14,6 @@ Ubuntu Noble (24.04) and Jimmy (22.04) for the ARM64 and AMD64 processors.
     docker exec -it tembo-postgres psql
     ```
 
-*   Runs in [CloudNativePG]; just set the `imageName` key in the `spec`
-    section of the `Cluster` manifest:
-
-    ```yaml
-    apiVersion: postgresql.cnpg.io/v1
-    kind: Cluster
-    metadata:
-      # [...]
-    spec:
-      imageName: quay.io/tembo/postgres:17
-      #[...]
-    ```
-
 *   Based on the latest and previous LTS Ubuntu [Ubuntu Linux], currently
     24.04 LTS "Noble Numbat" and 22.04 LTS "Jammy Jellyfish".
 
@@ -41,10 +28,13 @@ Ubuntu Noble (24.04) and Jimmy (22.04) for the ARM64 and AMD64 processors.
 ## Building
 
 The easiest way to build and load the `postgres` and `postgres-dev` images
-into Docker is:
+into Docker is to set up a temporary registry, push to it, then pull from it:
 
 ```sh
-arch="$(uname -m)" pg_version=17.4 docker buildx bake --load
+docker run -d -p 5001:5000 --restart=always --name registry registry:2
+registry=localhost:5001 arch="$(uname -m)" pg_version=17.4 docker buildx bake --push
+docker pull localhost:5001/postgres
+docker pull localhost:5001/postgres-dev
 ```
 
 Set these environment variables to modify the build behavior:
@@ -152,12 +142,9 @@ And an image built on the latest Postgres includes the tag:
 *   `/var/lib/postgresql`: The home directory for the `postgres` user where
     all the potentially persistent data files and libraries live.
 
-*   `/var/lib/postgresql/data`: The default data directory where the Docker
-    entrypoint script and [CloudNativePG] store the data files in a `pgdata`
-    subdirectory. Mount a volume to this directory for data persistence.
-
-*   `/var/lib/postgresql/tembo`: The directory where [Tembo Cloud] mounts a
-    persistent volume and stores persistent data:
+*   `/var/lib/postgresql/data`: The directory where the Docker entrypoint
+    script initializes the database in the `pgdata` subdirectory, and where
+    [Tembo Cloud] mounts a persistent volume and stores persistent data:
     *   `pgdata`: Tembo initializes and runs the cluster from this
         subdirectory.
     *   `mod`: Tembo stores extension module libraries this subdirectory.
@@ -166,7 +153,13 @@ And an image built on the latest Postgres includes the tag:
         subdirectory.
 
 *   `/usr/lib/postgresql`: The home of the PostgreSQL binaries, libraries, and
-    header & locale files. Immutable in [CloudNativePG] and [Tembo Cloud].
+    header & locale files. Immutable in [Tembo Cloud].
+
+### Cloud Native Postgres Support
+
+Unfortunately, this image does not work on [CloudNativePG]. This is because it
+currently stores files in `/var/lib/postgresql/data` that [CloudNativePG]
+masks when it mounts the directory as a volume.
 
 ## Tasks
 

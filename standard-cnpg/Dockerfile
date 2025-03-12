@@ -122,11 +122,7 @@ RUN set -eux; \
     ldconfig; \
     # Install auto_explain and pg_stat_statements.
     /usr/bin/trunk install auto_explain; \
-    /usr/bin/trunk install pg_stat_statements; \
-    # cache pg_stat_statements and auto_explain and pg_stat_kcache to temp directory
-    mkdir /tmp/pg_pkglibdir /tmp/pg_sharedir; \
-    cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
-    cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir
+    /usr/bin/trunk install pg_stat_statements;
 
 # Revert the postgres user to id 26
 RUN usermod -u 26 postgres
