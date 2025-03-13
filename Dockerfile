@@ -125,9 +125,10 @@ RUN set -ex; \
 	useradd -r -g postgres --uid=26 --home-dir=${PG_HOME} --shell=/bin/bash postgres && \
     chown -R postgres:postgres ${PG_HOME};
 
-# Add the README and entrypoint script.
+# Add the README, entrypoint script, and sync script.
 COPY CONTAINER_README.md "${PG_HOME}/README.md"
 COPY docker-entrypoint.sh /usr/local/bin/
+COPY sync-volume.sh /tmp/
 
 ##############################################################################
 # Build the postgres-dev image as a single layer.
@@ -176,9 +177,10 @@ RUN set -xe; \
     mkdir -p "${TEMBO_LD_LIB_DIR}" "${TEMBO_PG_MOD_DIR}"; \
     rm -rf /var/lib/apt/lists/* /var/cache/* /var/log/*;
 
-# Add the README and entrypoint script.
+# Add the README, entrypoint script, and sync script.
 COPY CONTAINER_README.md "${PG_HOME}/README.md"
 COPY docker-entrypoint.sh /usr/local/bin/
+COPY sync-volume.sh /tmp/
 
 # Create the Postgres user and set its uid to what CNPG expects.
 RUN groupadd -r postgres --gid=999 && \
