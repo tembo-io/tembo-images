@@ -49,12 +49,12 @@ variable os_spec {
     noble = {
       image = "quay.io/tembo/ubuntu:24.04",
       digest = "72297848456d5d37d1262630108ab308d3e9ec7ed1c3286a32fe09856619a782"
-      packages = "libicu74"
+      packages = "libicu74 libaio1t64 libgdbm-compat4t64"
     },
     jammy = {
       image = "quay.io/tembo/ubuntu:22.04",
       digest = "ed1544e454989078f5dec1bfdabd8c5cc9c48e0705d07b678ab6ae3fb61952d2"
-      packages = "libicu70"
+      packages = "libicu70 libaio1 libgdbm-compat4"
     }
   }
 }

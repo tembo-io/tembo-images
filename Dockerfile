@@ -146,11 +146,6 @@ ENTRYPOINT ["docker-entrypoint.sh"]
 FROM ${BASE} AS install
 ARG PACKAGES TEMBO_LD_LIB_DIR TEMBO_PG_MOD_DIR PG_PREFIX PG_HOME
 
-# Copy the PostgreSQL files and trunk.
-COPY --link --from=build --parents /var/lib/./postgresql /var/lib/
-COPY --link --from=build --parents /usr/lib/./postgresql /usr/lib/
-COPY --link --from=trunk /usr/local/cargo/bin/trunk /usr/local/bin/trunk
-
 # Upgrade to the latest packages and install dependencies.
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get upgrade -y && apt-get install --no-install-recommends -y \
@@ -167,7 +162,17 @@ RUN apt-get update && apt-get upgrade -y && apt-get install --no-install-recomme
     xz-utils \
     libgss3 \
     libkrb5-3 \
+    media-types \
+    netbase \
+    libexpat1 \
+    libsasl2-2 \
+    libgsl27 \
     ${PACKAGES}
+
+# Copy the PostgreSQL files and trunk.
+COPY --link --from=build --parents /var/lib/./postgresql /var/lib/
+COPY --link --from=build --parents /usr/lib/./postgresql /usr/lib/
+COPY --link --from=trunk /usr/local/cargo/bin/trunk /usr/local/bin/trunk
 
 # Clean up and finish configuration.
 ENV PATH=${PG_PREFIX}/bin:$PATH
