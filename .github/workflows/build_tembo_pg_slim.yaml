@@ -95,9 +95,10 @@ jobs:
       id-token: write
       contents: read
     runs-on:
-      - self-hosted
-      - dind
-      - large-8x8
+      - "runs-on=${{ github.run_id }}-pg-slim"
+      - "runner=large-amd64"
+      - "cpu=8"
+      - "ram=16"
     strategy:
       fail-fast: false
       matrix: ${{fromJson(needs.pre-build.outputs.build_matrix)}}
@@ -134,9 +135,10 @@ jobs:
       id-token: write
       contents: read
     runs-on:
-      - self-hosted
-      - dind
-      - large-8x8
+      - "runs-on=${{ github.run_id }}-standard-cnpg"
+      - "runner=large-amd64"
+      - "cpu=8"
+      - "ram=16"
     strategy:
       fail-fast: false
       matrix: ${{fromJson(needs.pre-build.outputs.build_matrix)}}
@@ -192,9 +194,10 @@ jobs:
       id-token: write
       contents: read
     runs-on:
-      - self-hosted
-      - dind
-      - large-8x8
+      - "runs-on=${{ github.run_id }}-ml-cnpg"
+      - "runner=large-amd64"
+      - "cpu=8"
+      - "ram=16"
     strategy:
       fail-fast: false
       matrix: ${{fromJson(needs.pre-build.outputs.build_matrix)}}
@@ -262,9 +265,10 @@ jobs:
       id-token: write
       contents: read
     runs-on:
-      - self-hosted
-      - dind
-      - large-8x8
+      - "runs-on=${{ github.run_id }}-geo-cnpg"
+      - "runner=large-amd64"
+      - "cpu=8"
+      - "ram=16"
     strategy:
       fail-fast: false
       matrix: ${{fromJson(needs.pre-build.outputs.build_matrix)}}
@@ -320,9 +324,10 @@ jobs:
       id-token: write
       contents: read
     runs-on:
-      - self-hosted
-      - dind
-      - large-8x8
+      - "runs-on=${{ github.run_id }}-tembo-pg-cnpg"
+      - "runner=large-amd64"
+      - "cpu=8"
+      - "ram=16"
     strategy:
       fail-fast: false
       matrix: ${{fromJson(needs.pre-build.outputs.build_matrix)}}
