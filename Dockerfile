@@ -15,7 +15,7 @@ ARG TEMBO_LD_LIB_DIR=${DATA_VOLUME}/lib
 
 # Set rpath to search the Postgres lib directory, then the Tembo Postgres lib
 # directory, where Trunk-installed extension libraries will live, and the
-# Tembo OS lib directory, where Trunk-installed third-party libraries will
+# Tembo OS lib directory, where Tembox-installed third-party libraries will
 # live. https://lekensteyn.nl/rpath.html
 ARG TEMBO_RPATH=${PG_PREFIX}/lib:${TEMBO_PG_MOD_DIR}:${TEMBO_LD_LIB_DIR}
 
@@ -28,7 +28,7 @@ RUN cargo install pg-trunk
 ##############################################################################
 # Build PostgreSQL.
 FROM ${BASE} AS build
-ARG PG_VERSION PG_PREFIX TEMBO_SHARE_DIR TEMBO_RPATH
+ARG PG_VERSION PG_PREFIX TEMBO_SHARE_DIR TEMBO_RPATH TARGETARCH
 WORKDIR /work
 
 # Upgrade to the latest packages and install dependencies.
@@ -103,6 +103,11 @@ RUN set -ex; \
     make -C contrib/auto_explain install; \
     make -C contrib/pg_stat_statements install;
 
+# Download and install tembox.
+ARG TEMBOX_VERSION=0.1.0
+RUN curl -L https://github.com/tembo-io/tembo-packaging/releases/download/v${TEMBOX_VERSION}/tembox-v${TEMBOX_VERSION}-linux-arm64.tar.gz \
+    | tar zxf - --strip-components=1 -C /usr/local/bin tembox-v${TEMBOX_VERSION}-linux-arm64/tembox
+
 ##############################################################################
 # Install additional stuff for the dev image.
 FROM build AS dev-install
@@ -125,9 +130,10 @@ RUN set -ex; \
 	useradd -r -g postgres --uid=26 --home-dir=${PG_HOME} --shell=/bin/bash postgres && \
     chown -R postgres:postgres ${PG_HOME};
 
-# Add the README, entrypoint script, and sync script.
+# Add the README, entrypoint script, trunk, and sync script.
 COPY CONTAINER_README.md "${PG_HOME}/README.md"
 COPY docker-entrypoint.sh /usr/local/bin/
+COPY --link --from=trunk /usr/local/cargo/bin/trunk /usr/local/bin/trunk
 COPY sync-volume.sh /tmp/
 
 ##############################################################################
@@ -169,9 +175,10 @@ RUN apt-get update && apt-get upgrade -y && apt-get install --no-install-recomme
     libgsl27 \
     ${PACKAGES}
 
-# Copy the PostgreSQL files and trunk.
+# Copy the PostgreSQL files, trunk, and tembox.
 COPY --link --from=build --parents /var/lib/./postgresql /var/lib/
 COPY --link --from=build --parents /usr/lib/./postgresql /usr/lib/
+COPY --link --from=build /usr/local/bin/tembox /usr/local/bin/tembox
 COPY --link --from=trunk /usr/local/cargo/bin/trunk /usr/local/bin/trunk
 
 # Clean up and finish configuration.
