@@ -99,13 +99,13 @@ RUN set -ex; \
 
 # Download and install the latest trunk release.
 RUN tag="$(curl -sLH 'Accept: application/json' https://github.com/tembo-io/trunk/releases/latest | sed -e 's/.*"tag_name":"\([^"]*\)".*/\1/')"; \
-    curl -L https://github.com/tembo-io/trunk/releases/download/$tag/trunk-$tag-linux-arm64.tar.gz \
-    | tar zxf - --strip-components=1 -C /usr/local/bin trunk-$tag-linux-arm64/trunk
+    curl -L https://github.com/tembo-io/trunk/releases/download/$tag/trunk-$tag-linux-${TARGETARCH}.tar.gz \
+    | tar zxf - --strip-components=1 -C /usr/local/bin trunk-$tag-linux-${TARGETARCH}/trunk
 
 # Download and install the latest tembox release.
 RUN tag="$(curl -sLH 'Accept: application/json' https://github.com/tembo-io/tembo-packaging/releases/latest | sed -e 's/.*"tag_name":"\([^"]*\)".*/\1/')"; \
-    curl -L https://github.com/tembo-io/tembo-packaging/releases/download/$tag/tembox-$tag-linux-arm64.tar.gz \
-    | tar zxf - --strip-components=1 -C /usr/local/bin tembox-$tag-linux-arm64/tembox
+    curl -L https://github.com/tembo-io/tembo-packaging/releases/download/$tag/tembox-$tag-linux-${TARGETARCH}.tar.gz \
+    | tar zxf - --strip-components=1 -C /usr/local/bin tembox-$tag-linux-${TARGETARCH}/tembox
 
 ##############################################################################
 # Install additional stuff for the dev image.

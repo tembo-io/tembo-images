@@ -5,16 +5,20 @@ on:
     branches:
       - main
     paths:
-      - .github/workflows/bake.yaml
-      - "[dD]ocker*"
+      - .github/workflows/bake\.yaml
+      - Dockerfile
+      - docker-bake\.hcl
+      - docker-entrypoint\.sh
       - CONTAINER_README.md
       - manifest\.js
   pull_request:
     branches:
       - main
     paths:
-      - .github/workflows/bake.yaml
-      - "[dD]ocker*"
+      - .github/workflows/bake\.yaml
+      - Dockerfile
+      - docker-bake\.hcl
+      - docker-entrypoint\.sh
       - CONTAINER_README.md
       - manifest\.js
   schedule:
