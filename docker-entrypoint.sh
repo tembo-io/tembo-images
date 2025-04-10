@@ -28,7 +28,7 @@ main() {
             -D "$PGDATA"
             -U postgres
             -c listen_addresses='*'
-            -c dynamic_library_path="\$libdir:/var/lib/postgresql/tembo/mod"
+            -c dynamic_library_path="\$libdir:/var/lib/postgresql/data/mod"
             --auth trust
             --encoding UNICODE
         )

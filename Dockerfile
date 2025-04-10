@@ -98,14 +98,18 @@ RUN set -ex; \
     make -C contrib/pg_stat_statements install;
 
 # Download and install the latest trunk release.
-RUN tag="$(curl -sLH 'Accept: application/json' https://github.com/tembo-io/trunk/releases/latest | sed -e 's/.*"tag_name":"\([^"]*\)".*/\1/')"; \
+RUN set -ex; \
+    tag="$(curl -sLH 'Accept: application/json' https://github.com/tembo-io/trunk/releases/latest | sed -e 's/.*"tag_name":"\([^"]*\)".*/\1/')"; \
     curl -L https://github.com/tembo-io/trunk/releases/download/$tag/trunk-$tag-linux-${TARGETARCH}.tar.gz \
-    | tar zxf - --strip-components=1 -C /usr/local/bin trunk-$tag-linux-${TARGETARCH}/trunk
+    | tar zxf - --strip-components=1 -C /usr/local/bin trunk-$tag-linux-${TARGETARCH}/trunk; \
+    trunk --version
 
 # Download and install the latest tembox release.
-RUN tag="$(curl -sLH 'Accept: application/json' https://github.com/tembo-io/tembo-packaging/releases/latest | sed -e 's/.*"tag_name":"\([^"]*\)".*/\1/')"; \
+RUN set -ex; \
+    tag="$(curl -sLH 'Accept: application/json' https://github.com/tembo-io/tembo-packaging/releases/latest | sed -e 's/.*"tag_name":"\([^"]*\)".*/\1/')"; \
     curl -L https://github.com/tembo-io/tembo-packaging/releases/download/$tag/tembox-$tag-linux-${TARGETARCH}.tar.gz \
-    | tar zxf - --strip-components=1 -C /usr/local/bin tembox-$tag-linux-${TARGETARCH}/tembox
+    | tar zxf - --strip-components=1 -C /usr/local/bin tembox-$tag-linux-${TARGETARCH}/tembox; \
+    tembox --version
 
 ##############################################################################
 # Install additional stuff for the dev image.
