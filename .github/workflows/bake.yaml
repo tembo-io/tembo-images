@@ -21,8 +21,8 @@ on:
       - docker-entrypoint\.sh
       - CONTAINER_README.md
       - manifest\.js
-  schedule:
-    - cron: 0 8 * * 1
+  # schedule:
+  #   - cron: 0 8 * * 1
 
 jobs:
   bake:
